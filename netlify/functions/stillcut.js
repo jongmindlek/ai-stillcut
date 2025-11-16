@@ -138,13 +138,20 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
 
       try {
         const imgRes = await client.images.generate({
-          model: "gpt-image-1",
-          prompt: imagePrompt,
-          size: "1024x576",
-          n: 1,
-        });
+  model: "gpt-image-1",
+  prompt: imagePrompt,
+  size: "1024x576",
+  n: 1,
+  response_format: "b64_json",
+});
 
-        heroImageUrl = imgRes.data?.[0]?.url || null;
+const b64 = imgRes.data?.[0]?.b64_json;
+if (b64) {
+  heroImageUrl = `data:image/png;base64,${b64}`;
+} else {
+  heroImageUrl = null;
+}
+
       } catch (imgErr) {
         console.error("이미지 생성 오류:", imgErr);
         heroImageUrl = null; // 이미지 없으면 그냥 텍스트만 보여줌
