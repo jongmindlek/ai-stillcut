@@ -6,7 +6,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 간단한 HTML 이스케이프 함수
+// 간단한 HTML 이스케이프
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -113,9 +113,42 @@ exports.handler = async (event) => {
         cuts = data.cuts.slice(0, 6); // 최대 6개까지만 사용
       }
     } catch (aiErr) {
-      console.error("OpenAI 호출/파싱 오류:", aiErr);
+      console.error("OpenAI 텍스트 호출/파싱 오류:", aiErr);
       summary = "AI 요약 생성 중 오류가 발생했습니다.";
       cuts = [];
+    }
+
+    // 4) 대표컷 1개 골라서 이미지 생성 프롬프트 만들기
+    let heroImageUrl = null;
+    const heroCut = cuts[0]; // 첫 번째 컷을 대표컷으로 사용
+
+    if (heroCut) {
+      const imagePrompt = `
+${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
+무드: ${input.mood || "감성적인"}
+로케이션: ${input.location_type || "실내/야외"}
+컷 이름: ${heroCut.cut_title || ""}
+샷 타입: ${heroCut.shot_type || ""}
+카메라 무브: ${heroCut.movement || ""}
+컷 설명: ${heroCut.description || ""}
+
+시네마틱, 고화질 스틸컷, 영화 스틸 느낌, 사실적인 사진 스타일.
+인물이나 얼굴이 등장하더라도 일반적인 모델/배우로 표현.
+      `.trim();
+
+      try {
+        const imgRes = await client.images.generate({
+          model: "gpt-image-1",
+          prompt: imagePrompt,
+          size: "1024x576",
+          n: 1,
+        });
+
+        heroImageUrl = imgRes.data?.[0]?.url || null;
+      } catch (imgErr) {
+        console.error("이미지 생성 오류:", imgErr);
+        heroImageUrl = null; // 이미지 없으면 그냥 텍스트만 보여줌
+      }
     }
 
     const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
@@ -149,7 +182,7 @@ exports.handler = async (event) => {
             .join("")
         : `<p style="font-size:13px; opacity:0.85;">스틸컷 후보를 가져오지 못했습니다.</p>`;
 
-    // 4) HTML 렌더링
+    // 5) HTML 렌더링
     const html = `
 <!DOCTYPE html>
 <html lang="ko">
@@ -211,6 +244,14 @@ exports.handler = async (event) => {
       text-decoration: none;
       color: #7BA5FF;
     }
+    .hero-img {
+      width: 100%;
+      border-radius: 18px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      display: block;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -223,9 +264,27 @@ exports.handler = async (event) => {
     <main>
       <h1>AI 스틸컷 설계 결과</h1>
       <p style="font-size:13px; opacity:0.85;">
-        입력하신 프로젝트 정보를 바탕으로 AI가 스틸컷 후보와 감독 메모를 정리한 결과입니다.
-        (지금은 2단계: 스틸컷 중심 버전)
+        입력하신 프로젝트 정보를 바탕으로 AI가 대표 스틸컷 이미지 1장과
+        스틸컷 후보, 감독 메모를 정리한 결과입니다.
       </p>
+
+      <section>
+        <h2>대표 스틸컷 (AI 생성)</h2>
+        ${
+          heroImageUrl
+            ? `<img src="${heroImageUrl}" alt="대표 스틸컷" class="hero-img" />`
+            : `<p style="font-size:13px; opacity:0.85;">이미지 생성에 실패하여 대표 이미지를 표시하지 못했습니다.</p>`
+        }
+        ${
+          heroCut
+            ? `<div style="font-size:13px; opacity:0.9; margin-top:4px;">
+                 ${escapeHtml(heroCut.cut_title || "")} · ${escapeHtml(
+                heroCut.shot_type || ""
+              )} · ${escapeHtml(heroCut.movement || "")}
+               </div>`
+            : ""
+        }
+      </section>
 
       <section>
         <h2>프로젝트 요약</h2>
@@ -264,14 +323,6 @@ exports.handler = async (event) => {
         ${cutsHtml}
       </section>
 
-      <section>
-        <h2>다음 단계 안내</h2>
-        <p style="font-size:13px; opacity:0.9;">
-          · 이후 단계에서 각 스틸컷에 맞는 구체적인 장비 구성과 촬영/편집 일정까지 함께 제안하도록 확장할 수 있습니다.<br/>
-          · 이 결과를 그대로 클라이언트 제안서/프리프로덕션 문서에 붙여넣을 수 있도록 포맷을 조정해 나갈 수 있습니다.
-        </p>
-      </section>
-
       <a href="/" class="back-link">← 다시 입력 페이지로 돌아가기</a>
     </main>
   </div>
@@ -293,3 +344,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
