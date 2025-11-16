@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Ai 스틸컷 서비스</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #07080b;
+      color: #f5f5f5;
+      line-height: 1.5;
+    }
+    .wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
+    }
+    .logo { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; }
+    .tagline { font-size: 12px; opacity: 0.8; }
+
+    h1 { font-size: 24px; margin: 24px 0 8px; }
+    .lead { font-size: 14px; opacity: 0.85; margin-bottom: 20px; }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 20px 18px;
+      max-width: 600px;
+    }
+    .form-row { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; margin-bottom: 4px; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
+      font-size: 13px;
+    }
+
+    .submit-btn {
+      margin-top: 8px;
+      padding: 11px 22px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      color: #111;
+    }
+    footer {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      font-size: 11px;
+      opacity: 0.65;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <header>
+      <div class="logo">FIDUCIA · AI STILLCUT</div>
+      <div class="tagline">스틸컷 · 장비 · 일정 추천</div>
+    </header>
+
+    <main>
+      <h1>AI 스틸컷, 장비, 일정 추천</h1>
+      <p class="lead">아래 정보를 입력하면 AI가 프로젝트에 맞는 스틸컷·장비·스케줄을 자동 생성합니다.</p>
+
+      <section class="card">
+        <form action="/.netlify/functions/stillcut" method="POST">
+          <h2 style="font-size:18px; margin-bottom:12px;">프로젝트 기본 정보</h2>
+
+          <div class="form-row">
+            <label>영상 링크</label>
+            <input name="video_url" type="url">
+          </div>
+
+          <div class="form-row">
+            <label>영상 종류</label>
+            <select name="video_type">
+              <option>브랜딩</option>
+              <option>웨딩</option>
+              <option>뮤직비디오</option>
+              <option>행사</option>
+              <option>유튜브</option>
+              <option>기타</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>무드/톤</label>
+            <input name="mood" type="text">
+          </div>
+
+          <div class="form-row">
+            <label>영상 길이</label>
+            <select name="project_length">
+              <option>30초</option>
+              <option>1분</option>
+              <option>2~3분</option>
+              <option>5분 이상</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>로케이션</label>
+            <input name="location_type" type="text">
+          </div>
+
+          <div class="form-row">
+            <label>예산</label>
+            <select name="budget_level">
+              <option>50~100만원 이하</option>
+              <option>100~200만원</option>
+              <option>200~300만원</option>
+              <option>300만원 이상</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>크루 규모</label>
+            <select name="crew_preference">
+              <option>1인 운영</option>
+              <option>2~3인 소규모</option>
+              <option>4인 이상</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>희망 마감일</label>
+            <input name="deadline" type="text">
+          </div>
+
+          <div class="form-row">
+            <label>추가 요청사항</label>
+            <textarea name="extra_notes"></textarea>
+          </div>
+
+          <button class="submit-btn">AI 스틸컷 생성 요청</button>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <div>© 2025 FIDUCIA COLLECTIVE</div>
+      <div>문의: (세팅 예정)</div>
+    </footer>
+  </div>
+</body>
+</html>
