@@ -6,8 +6,17 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 간단한 HTML 이스케이프 함수
+function escapeHtml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 exports.handler = async (event) => {
-  // 1) GET이면 안내문만
+  // 1) GET이면 안내만
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 200,
@@ -37,10 +46,19 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
-    // 3) OpenAI에 요약 한 줄 요청
-    const prompt = `
-너는 시니어 영상 감독이자 프로듀서야.
-아래 프로젝트 정보를 보고, 감독 메모 형식으로 한 줄 요약을 만들어줘.
+    // 3) OpenAI에 "요약 + 스틸컷 후보 리스트(JSON)" 요청
+    const userPrompt = `
+너는 상업 영상/웨딩/브랜딩을 많이 찍어본 시니어 영상 감독이자 프로듀서야.
+아래 프로젝트 정보를 바탕으로,
+
+1) 프로젝트 한 줄 요약 (감독 메모 느낌, 60자 이내)
+2) 스틸컷 후보 4~6개
+   - 각 후보는 다음 정보를 포함:
+     - cut_title: 컷 이름 (예: "오프닝 인서트", "신부 클로즈업")
+     - shot_type: 샷 타입 (예: "CU", "MCU", "WS", "2SHOT" 등)
+     - movement: 카메라 무브 (예: "천천히 인", "핸드헬드 워킹", "고정 샷")
+     - description: 컷의 역할/분위기를 감독 시점에서 설명
+     - tech_note: 카메라/렌즈/조명에 대한 간단한 기술 메모
 
 [프로젝트 정보]
 - 영상 종류: ${input.video_type}
@@ -52,37 +70,86 @@ exports.handler = async (event) => {
 - 희망 마감: ${input.deadline}
 - 추가 요청: ${input.extra_notes}
 
-요구사항:
-- 한국어 한 문장으로만 답하기
-- "~한, 시네마틱 브랜딩 필름" 이런 식으로 감독의 의도를 써주기
-- 최대 60자 이내.
+반드시 아래 JSON 형식으로만 한국어로 응답해.
+코드블록 없이 순수 JSON만:
+
+{
+  "summary": "프로젝트 한 줄 요약",
+  "cuts": [
+    {
+      "cut_title": "...",
+      "shot_type": "...",
+      "movement": "...",
+      "description": "...",
+      "tech_note": "..."
+    }
+  ]
+}
     `.trim();
 
-    let aiSummary = "";
+    let summary = "";
+    let cuts = [];
+
     try {
       const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "너는 시니어 영상 감독이다." },
-          { role: "user", content: prompt },
+          { role: "system", content: "너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이다." },
+          { role: "user", content: userPrompt },
         ],
-        temperature: 0.7,
+        temperature: 0.8,
       });
 
-      aiSummary =
-        completion.choices?.[0]?.message?.content?.trim() ||
-        "AI 요약을 가져오지 못했습니다.";
+      const content = completion.choices?.[0]?.message?.content || "{}";
+      const data = JSON.parse(content);
+
+      summary = (data.summary || "").trim();
+      if (!summary) {
+        summary = "AI 요약을 가져오지 못했습니다.";
+      }
+
+      if (Array.isArray(data.cuts)) {
+        cuts = data.cuts.slice(0, 6); // 최대 6개까지만 사용
+      }
     } catch (aiErr) {
-      console.error("OpenAI 호출 오류:", aiErr);
-      aiSummary = "AI 요약 생성 중 오류가 발생했습니다.";
+      console.error("OpenAI 호출/파싱 오류:", aiErr);
+      summary = "AI 요약 생성 중 오류가 발생했습니다.";
+      cuts = [];
     }
 
-    // 4) HTML 생성 (기존 샘플 + AI 요약 한 섹션 추가)
-    const safeNotes = (input.extra_notes || "입력 없음")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\n/g, "<br>");
+    const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
+      /\n/g,
+      "<br>"
+    );
 
+    const cutsHtml =
+      cuts.length > 0
+        ? cuts
+            .map((cut, idx) => {
+              return `
+        <div style="margin-bottom:14px; padding:12px 10px; border-radius:12px; background:rgba(0,0,0,0.35);">
+          <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${idx + 1}</div>
+          <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
+            ${escapeHtml(cut.cut_title || "제목 없음")}
+          </div>
+          <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
+            샷: ${escapeHtml(cut.shot_type || "정보 없음")} · 무브: ${escapeHtml(
+                cut.movement || "정보 없음"
+              )}
+          </div>
+          <div style="font-size:13px; margin-bottom:4px;">
+            ${escapeHtml(cut.description || "설명 없음")}
+          </div>
+          <div style="font-size:12px; opacity:0.75;">
+            장비/기술 메모: ${escapeHtml(cut.tech_note || "메모 없음")}
+          </div>
+        </div>`;
+            })
+            .join("")
+        : `<p style="font-size:13px; opacity:0.85;">스틸컷 후보를 가져오지 못했습니다.</p>`;
+
+    // 4) HTML 렌더링
     const html = `
 <!DOCTYPE html>
 <html lang="ko">
@@ -154,31 +221,31 @@ exports.handler = async (event) => {
     </header>
 
     <main>
-      <h1>AI 스틸컷 설계 결과 (1단계)</h1>
+      <h1>AI 스틸컷 설계 결과</h1>
       <p style="font-size:13px; opacity:0.85;">
-        지금은 전체 구조 테스트 단계로, 아래 요약 문장은 실제 OpenAI가 생성한 내용입니다.
-        이 구조 위에 스틸컷/장비/일정을 단계적으로 확장할 거예요.
+        입력하신 프로젝트 정보를 바탕으로 AI가 스틸컷 후보와 감독 메모를 정리한 결과입니다.
+        (지금은 2단계: 스틸컷 중심 버전)
       </p>
 
       <section>
         <h2>프로젝트 요약</h2>
-        <div class="pill">${input.video_type || "영상 타입 미입력"}</div>
-        <div class="pill">${input.project_length || "길이 미입력"}</div>
-        <div class="pill">${input.budget_level || "예산 미입력"}</div>
-        <div class="pill">${input.crew_preference || "크루 규모 미입력"}</div>
+        <div class="pill">${escapeHtml(input.video_type || "영상 타입 미입력")}</div>
+        <div class="pill">${escapeHtml(input.project_length || "길이 미입력")}</div>
+        <div class="pill">${escapeHtml(input.budget_level || "예산 미입력")}</div>
+        <div class="pill">${escapeHtml(input.crew_preference || "크루 규모 미입력")}</div>
 
         <div style="margin-top:12px;">
           <div class="label">영상 링크</div>
-          <div class="value">${input.video_url || "입력 없음"}</div>
+          <div class="value">${escapeHtml(input.video_url || "입력 없음")}</div>
 
           <div class="label">무드 / 톤</div>
-          <div class="value">${input.mood || "입력 없음"}</div>
+          <div class="value">${escapeHtml(input.mood || "입력 없음")}</div>
 
           <div class="label">로케이션</div>
-          <div class="value">${input.location_type || "입력 없음"}</div>
+          <div class="value">${escapeHtml(input.location_type || "입력 없음")}</div>
 
           <div class="label">희망 마감 시점</div>
-          <div class="value">${input.deadline || "입력 없음"}</div>
+          <div class="value">${escapeHtml(input.deadline || "입력 없음")}</div>
 
           <div class="label">추가 요청사항</div>
           <div class="value">${safeNotes}</div>
@@ -188,15 +255,20 @@ exports.handler = async (event) => {
       <section>
         <h2>AI 한 줄 요약</h2>
         <p style="font-size:14px; opacity:0.95;">
-          ${aiSummary}
+          ${escapeHtml(summary)}
         </p>
       </section>
 
       <section>
-        <h2>샘플 안내</h2>
+        <h2>AI 스틸컷 후보</h2>
+        ${cutsHtml}
+      </section>
+
+      <section>
+        <h2>다음 단계 안내</h2>
         <p style="font-size:13px; opacity:0.9;">
-          · 다음 단계에서는 이 요약을 기반으로 스틸컷 후보, 장비 구성, 촬영/편집 일정을 세분화해서 제공합니다.<br/>
-          · 지금은 OpenAI 연결과 전체 플로우가 정상 동작하는지 확인하는 1단계 버전입니다.
+          · 이후 단계에서 각 스틸컷에 맞는 구체적인 장비 구성과 촬영/편집 일정까지 함께 제안하도록 확장할 수 있습니다.<br/>
+          · 이 결과를 그대로 클라이언트 제안서/프리프로덕션 문서에 붙여넣을 수 있도록 포맷을 조정해 나갈 수 있습니다.
         </p>
       </section>
 
@@ -221,4 +293,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
