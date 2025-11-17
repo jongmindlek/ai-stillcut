@@ -1,9 +1,12 @@
 // netlify/functions/stillcut.js
-// ✅ 외부 AI 전혀 안 쓰는 버전
-// - OpenAI / HuggingFace / API 키 필요 없음
-// - 폼 입력값 + 간단한 랜덤 조합으로 "AI 느낌" 샷리스트/요약 생성
+// OpenAI + 로컬 규칙 엔진 (깨끗한 버전)
 
-// HTML 이스케이프
+const OpenAI = require("openai");
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -12,13 +15,12 @@ function escapeHtml(str = "") {
     .replace(/"/g, "&quot;");
 }
 
-// 랜덤 유틸
 function pickOne(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 요약 문장 만들기
-function makeSummary(input) {
+// 로컬 요약 (fallback)
+function makeSummaryLocal(input) {
   const type = input.video_type || "프로젝트";
   const mood = input.mood || pickOne(["감성적인", "시네마틱한", "따뜻한", "도시적인"]);
   const len = input.project_length || "1~3분";
@@ -34,8 +36,8 @@ function makeSummary(input) {
   return `${mood} 톤으로 ${len} 분량의 ${type}을(를) ${loc} ${pickOne(endings)}`;
 }
 
-// 스틸컷 후보 만들기 (타입별 + 랜덤 조합)
-function makeCuts(input) {
+// 로컬 샷리스트 (fallback)
+function makeCutsLocal(input) {
   const type = input.video_type || "";
   const mood = input.mood || "감성적인";
   const loc = input.location_type || "공간";
@@ -54,14 +56,14 @@ function makeCuts(input) {
         cut_title: "신부/신랑 디테일 인서트",
         shot_type: "CU / 인서트",
         movement: pickOne(["고정 샷", "아주 미세한 핸드헬드"]),
-        description: `드레스, 부케, 반지 등의 디테일을 ${mood} 톤으로 담아서 오프닝 무드를 잡는 컷.`,
+        description: `드레스, 부케, 반지 등의 디테일을 ${mood} 톤으로 담아 오프닝 무드를 만드는 컷.`,
         tech_note: "50mm 근접, 얕은 심도, 피부/하이라이트 관리. " + pickOne(baseTech),
       },
       {
         cut_title: "식장 전체 분위기 와이드",
         shot_type: "WS",
         movement: pickOne(["느린 패닝", "슬로우 짐벌 인"]),
-        description: `${loc} 전체 구조와 하객 분위기를 한 번에 보여주는 인트로/중간 브릿지 컷.`,
+        description: `${loc} 전체 구조와 하객 분위기를 한 번에 보여주는 인트로 / 브릿지 컷.`,
         tech_note: "24~35mm 광각, 수평/수직 라인 정리. " + pickOne(baseTech),
       },
       {
@@ -75,7 +77,7 @@ function makeCuts(input) {
         cut_title: "식 후 하객 축하 무드",
         shot_type: "MS / 2SHOT / 군중샷",
         movement: pickOne(["핸드헬드 워킹", "가벼운 짐벌 워크"]),
-        description: "가벼운 대화, 웃음, 포옹 등 전체적인 행복한 공기를 담는 컷.",
+        description: "대화, 웃음, 포옹 등 전체적인 행복한 공기를 담는 컷.",
         tech_note: "35mm 근처, 셔터 1/100 이상으로 흔들림 관리. " + pickOne(baseTech),
       }
     );
@@ -123,14 +125,14 @@ function makeCuts(input) {
         cut_title: "키 비주얼·로고 디테일",
         shot_type: "CU / 인서트",
         movement: "고정 샷",
-        description: "로고, 제품, 상징 오브젝트를 상징적으로 담는 상단/중간 인서트.",
+        description: "로고, 제품, 상징 오브젝트를 상징적으로 담는 인서트.",
         tech_note: "50mm 이상, 얕은 심도, 조명으로 포인트. " + pickOne(baseTech),
       },
       {
         cut_title: "사용자/제작자 스토리",
         shot_type: "MS / MCU",
         movement: pickOne(["고정 샷", "아주 미세한 인"]),
-        description: "브랜드를 사용하는 사람, 만드는 사람의 행동과 표정으로 이야기를 보여주는 컷.",
+        description: "브랜드를 사용하는 사람/만드는 사람의 행동과 표정을 담는 컷.",
         tech_note: "인물 노출/피부 톤 중심 세팅. " + pickOne(baseTech),
       },
       {
@@ -142,7 +144,6 @@ function makeCuts(input) {
       }
     );
   } else {
-    // 행사, 유튜브, 기타
     cuts.push(
       {
         cut_title: "공간 무드 와이드",
@@ -179,12 +180,11 @@ function makeCuts(input) {
 }
 
 exports.handler = async (event) => {
-  // GET이면 안내만
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: "이 엔드포인트는 폼을 통해 POST 요청(스틸컷 설계 요청)으로만 사용됩니다.",
+      body: "이 엔드포인트는 폼을 통해 POST 요청으로만 사용됩니다.",
     };
   }
 
@@ -204,8 +204,77 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
-    const summary = makeSummary(input);
-    const cuts = makeCuts(input);
+    let summary = makeSummaryLocal(input);
+    let cuts = makeCutsLocal(input);
+    let usedOpenAI = false;
+
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const userPrompt = `
+너는 상업 영상/웨딩/브랜딩을 많이 찍어본 시니어 감독이야.
+아래 프로젝트 정보를 보고,
+
+1) 프로젝트 전체를 한 문장으로 요약 (감독 메모 느낌, 60자 내외)
+2) 스틸컷 후보 4~6개를 JSON 배열로 작성
+
+각 스틸컷 객체는 다음 필드를 포함:
+- cut_title: 컷 이름
+- shot_type: 샷 타입 (CU/MCU/WS/2SHOT 등)
+- movement: 카메라 무브
+- description: 컷 설명
+- tech_note: 카메라/렌즈/조명 메모
+
+[프로젝트 정보]
+- 영상 종류: ${input.video_type}
+- 무드/톤: ${input.mood}
+- 영상 길이: ${input.project_length}
+- 로케이션: ${input.location_type}
+- 예산: ${input.budget_level}
+- 크루 규모: ${input.crew_preference}
+- 희망 마감: ${input.deadline}
+- 추가 요청: ${input.extra_notes}
+
+반드시 아래 JSON 형식으로만, 코드블록 없이 순수 JSON으로 응답해:
+{
+  "summary": "프로젝트 한 줄 요약",
+  "cuts": [
+    {
+      "cut_title": "...",
+      "shot_type": "...",
+      "movement": "...",
+      "description": "...",
+      "tech_note": "..."
+    }
+  ]
+}
+        `.trim();
+
+        const completion = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: "너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이다.",
+            },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.8,
+        });
+
+        const content = completion.choices?.[0]?.message?.content || "{}";
+        const data = JSON.parse(content);
+
+        if (data.summary) summary = String(data.summary).trim();
+        if (Array.isArray(data.cuts) && data.cuts.length > 0) {
+          cuts = data.cuts.slice(0, 6);
+        }
+
+        usedOpenAI = true;
+      } catch (e) {
+        console.error("OpenAI 호출/파싱 오류, 로컬 fallback으로 진행:", e);
+      }
+    }
 
     const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
       /\n/g,
@@ -218,16 +287,18 @@ exports.handler = async (event) => {
         <div style="margin-bottom:14px; padding:12px 10px; border-radius:12px; background:rgba(0,0,0,0.35);">
           <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${idx + 1}</div>
           <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
-            ${escapeHtml(cut.cut_title)}
+            ${escapeHtml(cut.cut_title || "제목 없음")}
           </div>
           <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
-            샷: ${escapeHtml(cut.shot_type)} · 무브: ${escapeHtml(cut.movement)}
+            샷: ${escapeHtml(cut.shot_type || "정보 없음")} · 무브: ${escapeHtml(
+              cut.movement || "정보 없음"
+            )}
           </div>
           <div style="font-size:13px; margin-bottom:4px;">
-            ${escapeHtml(cut.description)}
+            ${escapeHtml(cut.description || "설명 없음")}
           </div>
           <div style="font-size:12px; opacity:0.75;">
-            장비/기술 메모: ${escapeHtml(cut.tech_note)}
+            장비/기술 메모: ${escapeHtml(cut.tech_note || "메모 없음")}
           </div>
         </div>`;
       })
@@ -238,7 +309,7 @@ exports.handler = async (event) => {
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>AI 스틸컷 추천 결과 (로컬 버전)</title>
+  <title>AI 스틸컷 추천 결과</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -313,15 +384,11 @@ exports.handler = async (event) => {
   <div class="wrapper">
     <header>
       <div class="logo">FIDUCIA · AI STILLCUT</div>
-      <div class="tagline">로컬 규칙 기반 스틸컷 · 샷리스트</div>
+      <div class="tagline">스틸컷 · 샷리스트 자동 설계</div>
     </header>
 
     <main>
-      <h1>스틸컷 설계 결과 (테스트 버전)</h1>
-      <p style="font-size:13px; opacity:0.85;">
-        외부 AI 서버 없이, 입력하신 정보를 바탕으로 샷리스트와 요약을 자동 생성한 결과입니다.
-        (실제 운영 시에는 이 자리에 OpenAI/HuggingFace를 다시 연결할 수 있습니다.)
-      </p>
+      <h1>스틸컷 설계 결과</h1>
 
       <section>
         <h2>대표 스틸컷 자리</h2>
