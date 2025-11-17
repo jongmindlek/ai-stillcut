@@ -16,7 +16,6 @@ function escapeHtml(str = "") {
 }
 
 exports.handler = async (event) => {
-  // 1) GET이면 안내만
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 200,
@@ -25,12 +24,16 @@ exports.handler = async (event) => {
     };
   }
 
+  // 🔍 디버그용 문자열
+  let debugText = "";
+  let imageDebugText = "";
+
   try {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.");
     }
 
-    // 2) 폼 데이터 파싱
+    // 1) 폼 데이터 파싱
     const body = event.body || "";
     const params = new URLSearchParams(body);
 
@@ -46,7 +49,7 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
-    // 3) OpenAI에 "요약 + 스틸컷 후보 리스트(JSON)" 요청
+    // 2) 요약 + 스틸컷 JSON 요청
     const userPrompt = `
 너는 상업 영상/웨딩/브랜딩을 많이 찍어본 시니어 영상 감독이자 프로듀서야.
 아래 프로젝트 정보를 바탕으로,
@@ -54,11 +57,11 @@ exports.handler = async (event) => {
 1) 프로젝트 한 줄 요약 (감독 메모 느낌, 60자 이내)
 2) 스틸컷 후보 4~6개
    - 각 후보는 다음 정보를 포함:
-     - cut_title: 컷 이름 (예: "오프닝 인서트", "신부 클로즈업")
-     - shot_type: 샷 타입 (예: "CU", "MCU", "WS", "2SHOT" 등)
-     - movement: 카메라 무브 (예: "천천히 인", "핸드헬드 워킹", "고정 샷")
-     - description: 컷의 역할/분위기를 감독 시점에서 설명
-     - tech_note: 카메라/렌즈/조명에 대한 간단한 기술 메모
+     - cut_title
+     - shot_type
+     - movement
+     - description
+     - tech_note
 
 [프로젝트 정보]
 - 영상 종류: ${input.video_type}
@@ -105,22 +108,24 @@ exports.handler = async (event) => {
       const data = JSON.parse(content);
 
       summary = (data.summary || "").trim();
-      if (!summary) {
-        summary = "AI 요약을 가져오지 못했습니다.";
-      }
+      if (!summary) summary = "AI 요약을 가져오지 못했습니다.";
 
       if (Array.isArray(data.cuts)) {
-        cuts = data.cuts.slice(0, 6); // 최대 6개까지만 사용
+        cuts = data.cuts.slice(0, 6);
       }
     } catch (aiErr) {
       console.error("OpenAI 텍스트 호출/파싱 오류:", aiErr);
       summary = "AI 요약 생성 중 오류가 발생했습니다.";
       cuts = [];
+      // 🔍 여기서 에러 메시지 저장
+      debugText =
+        (aiErr && aiErr.message) ||
+        JSON.stringify(aiErr, Object.getOwnPropertyNames(aiErr), 2);
     }
 
-    // 4) 대표컷 1개 골라서 이미지 생성 프롬프트 만들기
+    // 3) 대표컷 이미지 시도
     let heroImageUrl = null;
-    const heroCut = cuts[0]; // 첫 번째 컷을 대표컷으로 사용
+    const heroCut = cuts[0];
 
     if (heroCut) {
       const imagePrompt = `
@@ -133,28 +138,30 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
 컷 설명: ${heroCut.description || ""}
 
 시네마틱, 고화질 스틸컷, 영화 스틸 느낌, 사실적인 사진 스타일.
-인물이나 얼굴이 등장하더라도 일반적인 모델/배우로 표현.
       `.trim();
 
       try {
         const imgRes = await client.images.generate({
-  model: "gpt-image-1",
-  prompt: imagePrompt,
-  size: "1024x576",
-  n: 1,
-  response_format: "b64_json",
-});
+          model: "gpt-image-1",
+          prompt: imagePrompt,
+          size: "1024x576",
+          n: 1,
+          response_format: "b64_json",
+        });
 
-const b64 = imgRes.data?.[0]?.b64_json;
-if (b64) {
-  heroImageUrl = `data:image/png;base64,${b64}`;
-} else {
-  heroImageUrl = null;
-}
-
+        const b64 = imgRes.data?.[0]?.b64_json;
+        if (b64) {
+          heroImageUrl = `data:image/png;base64,${b64}`;
+        } else {
+          heroImageUrl = null;
+          imageDebugText = "이미지 응답에서 b64_json을 찾지 못했습니다.";
+        }
       } catch (imgErr) {
         console.error("이미지 생성 오류:", imgErr);
-        heroImageUrl = null; // 이미지 없으면 그냥 텍스트만 보여줌
+        heroImageUrl = null;
+        imageDebugText =
+          (imgErr && imgErr.message) ||
+          JSON.stringify(imgErr, Object.getOwnPropertyNames(imgErr), 2);
       }
     }
 
@@ -169,7 +176,9 @@ if (b64) {
             .map((cut, idx) => {
               return `
         <div style="margin-bottom:14px; padding:12px 10px; border-radius:12px; background:rgba(0,0,0,0.35);">
-          <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${idx + 1}</div>
+          <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${
+            idx + 1
+          }</div>
           <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
             ${escapeHtml(cut.cut_title || "제목 없음")}
           </div>
@@ -189,13 +198,13 @@ if (b64) {
             .join("")
         : `<p style="font-size:13px; opacity:0.85;">스틸컷 후보를 가져오지 못했습니다.</p>`;
 
-    // 5) HTML 렌더링
+    // 4) HTML 렌더링
     const html = `
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>AI 스틸컷 추천 결과</title>
+  <title>AI 스틸컷 추천 결과 (디버그)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -259,37 +268,32 @@ if (b64) {
       display: block;
       object-fit: cover;
     }
+    pre {
+      white-space: pre-wrap;
+      font-size: 12px;
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <header>
       <div class="logo">FIDUCIA · AI STILLCUT</div>
-      <div class="tagline">스틸컷 · 장비 · 일정 추천</div>
+      <div class="tagline">스틸컷 · 장비 · 일정 추천 (디버그 모드)</div>
     </header>
 
     <main>
       <h1>AI 스틸컷 설계 결과</h1>
-      <p style="font-size:13px; opacity:0.85;">
-        입력하신 프로젝트 정보를 바탕으로 AI가 대표 스틸컷 이미지 1장과
-        스틸컷 후보, 감독 메모를 정리한 결과입니다.
-      </p>
 
       <section>
-        <h2>대표 스틸컷 (AI 생성)</h2>
+        <h2>대표 스틸컷 (AI 생성 시도)</h2>
         ${
           heroImageUrl
             ? `<img src="${heroImageUrl}" alt="대표 스틸컷" class="hero-img" />`
             : `<p style="font-size:13px; opacity:0.85;">이미지 생성에 실패하여 대표 이미지를 표시하지 못했습니다.</p>`
-        }
-        ${
-          heroCut
-            ? `<div style="font-size:13px; opacity:0.9; margin-top:4px;">
-                 ${escapeHtml(heroCut.cut_title || "")} · ${escapeHtml(
-                heroCut.shot_type || ""
-              )} · ${escapeHtml(heroCut.movement || "")}
-               </div>`
-            : ""
         }
       </section>
 
@@ -330,6 +334,23 @@ if (b64) {
         ${cutsHtml}
       </section>
 
+      <section>
+        <h2>디버그 정보 (임시)</h2>
+        <p style="font-size:12px; opacity:0.8;">
+          이 섹션은 문제 원인을 찾기 위한 임시 영역이에요. 나중에 지울 거라 신경 안 써도 돼!
+        </p>
+        ${
+          debugText
+            ? `<h3>텍스트/JSON 쪽 오류</h3><pre>${escapeHtml(debugText)}</pre>`
+            : `<p style="font-size:12px; opacity:0.7;">텍스트/JSON 쪽 오류 정보 없음</p>`
+        }
+        ${
+          imageDebugText
+            ? `<h3>이미지 쪽 오류</h3><pre>${escapeHtml(imageDebugText)}</pre>`
+            : `<p style="font-size:12px; opacity:0.7;">이미지 쪽 오류 정보 없음</p>`
+        }
+      </section>
+
       <a href="/" class="back-link">← 다시 입력 페이지로 돌아가기</a>
     </main>
   </div>
@@ -344,13 +365,14 @@ if (b64) {
     };
   } catch (err) {
     console.error("stillcut 함수 전체 오류:", err);
+    // 이 경우에도 최소한 에러 메시지 텍스트로 보여주기
+    const msg =
+      (err && err.message) ||
+      JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
     return {
       statusCode: 500,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: "서버에서 예기치 못한 오류가 발생했습니다.",
+      body: "서버에서 예기치 못한 오류가 발생했습니다.\n\n" + msg,
     };
   }
 };
-// redeploy test
-
-
