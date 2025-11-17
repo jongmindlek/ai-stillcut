@@ -1,8 +1,9 @@
 // netlify/functions/stillcut.js
-// ✅ OpenAI 전부 제거
-// ✅ HuggingFace 텍스트 + 이미지로만 작동하는 버전
+// ✅ 외부 AI 전혀 안 쓰는 버전
+// - OpenAI / HuggingFace / API 키 필요 없음
+// - 폼 입력값 + 간단한 랜덤 조합으로 "AI 느낌" 샷리스트/요약 생성
 
-// HTML 이스케이프 함수
+// HTML 이스케이프
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -11,88 +12,183 @@ function escapeHtml(str = "") {
     .replace(/"/g, "&quot;");
 }
 
-// HuggingFace 텍스트 생성 호출
-async function generateTextFromHF(prompt) {
-  if (!process.env.HF_API_KEY) {
-    throw new Error("HF_API_KEY 환경변수가 설정되지 않았습니다.");
-  }
-
-  const res = await fetch(
-    "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.HF_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 400,
-          temperature: 0.8,
-        },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(`HuggingFace 텍스트 API 오류: ${res.status} ${msg}`);
-  }
-
-  const data = await res.json();
-  // HF text-generation은 보통 [{ generated_text: "..." }] 형태로 옴
-  let text = "";
-  if (Array.isArray(data) && data[0]?.generated_text) {
-    text = data[0].generated_text;
-  } else if (data.generated_text) {
-    text = data.generated_text;
-  } else {
-    text = JSON.stringify(data);
-  }
-  return text.trim();
+// 랜덤 유틸
+function pickOne(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// HuggingFace 이미지 생성 호출 (Stable Diffusion)
-async function generateImageFromHF(prompt) {
-  if (!process.env.HF_API_KEY) {
-    throw new Error("HF_API_KEY 환경변수가 설정되지 않았습니다.");
-  }
+// 요약 문장 만들기
+function makeSummary(input) {
+  const type = input.video_type || "프로젝트";
+  const mood = input.mood || pickOne(["감성적인", "시네마틱한", "따뜻한", "도시적인"]);
+  const len = input.project_length || "1~3분";
+  const loc = input.location_type || "한 공간에서";
 
-  const res = await fetch(
-    "https://api-inference.huggingface.co/models/stabilityai/sdxl-base-1.0",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.HF_API_KEY}`,
-        "Content-Type": "application/json",
+  const endings = [
+    "담아내는 시네마틱 필름",
+    "섬세하게 포착하는 무드 필름",
+    "브랜드의 결을 보여주는 영상",
+    "감정을 오래 남기는 영상",
+  ];
+
+  return `${mood} 톤으로 ${len} 분량의 ${type}을(를) ${loc} ${pickOne(endings)}`;
+}
+
+// 스틸컷 후보 만들기 (타입별 + 랜덤 조합)
+function makeCuts(input) {
+  const type = input.video_type || "";
+  const mood = input.mood || "감성적인";
+  const loc = input.location_type || "공간";
+
+  const baseTech = [
+    "S-Log3 기준, 노출 안전하게, 기본 짐벌+삼각대 세팅.",
+    "프레임 구도 먼저 잡고, 사람/오브젝트 동선을 고려.",
+    "컬러는 나중 보정 전제, 촬영 시 노출/콘트라스트에만 집중.",
+  ];
+
+  const cuts = [];
+
+  if (type.includes("웨딩")) {
+    cuts.push(
+      {
+        cut_title: "신부/신랑 디테일 인서트",
+        shot_type: "CU / 인서트",
+        movement: pickOne(["고정 샷", "아주 미세한 핸드헬드"]),
+        description: `드레스, 부케, 반지 등의 디테일을 ${mood} 톤으로 담아서 오프닝 무드를 잡는 컷.`,
+        tech_note: "50mm 근접, 얕은 심도, 피부/하이라이트 관리. " + pickOne(baseTech),
       },
-      body: JSON.stringify({ inputs: prompt }),
-    }
-  );
-
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(`HuggingFace 이미지 API 오류: ${res.status} ${msg}`);
+      {
+        cut_title: "식장 전체 분위기 와이드",
+        shot_type: "WS",
+        movement: pickOne(["느린 패닝", "슬로우 짐벌 인"]),
+        description: `${loc} 전체 구조와 하객 분위기를 한 번에 보여주는 인트로/중간 브릿지 컷.`,
+        tech_note: "24~35mm 광각, 수평/수직 라인 정리. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "서약/하이라이트 클로즈업",
+        shot_type: "MCU / CU",
+        movement: pickOne(["고정 샷", "아주 천천히 인"]),
+        description: "표정·눈빛·손의 떨림 등 감정이 드러나는 순간을 붙잡는 핵심 스틸컷.",
+        tech_note: "85mm 전후 망원, F2 전후, 얼굴 노출 안정. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "식 후 하객 축하 무드",
+        shot_type: "MS / 2SHOT / 군중샷",
+        movement: pickOne(["핸드헬드 워킹", "가벼운 짐벌 워크"]),
+        description: "가벼운 대화, 웃음, 포옹 등 전체적인 행복한 공기를 담는 컷.",
+        tech_note: "35mm 근처, 셔터 1/100 이상으로 흔들림 관리. " + pickOne(baseTech),
+      }
+    );
+  } else if (type.includes("뮤직")) {
+    cuts.push(
+      {
+        cut_title: "오프닝 무드 인트로",
+        shot_type: "WS / MS",
+        movement: pickOne(["슬로우 짐벌 워킹", "고정 샷"]),
+        description: `${loc}의 질감과 조명을 이용해 곡 분위기를 먼저 깔아주는 인서트 컷.`,
+        tech_note: "광각+약간의 스모그/백라이트 좋음. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "메인 퍼포먼스 샷",
+        shot_type: "MS / 2SHOT",
+        movement: pickOne(["고정 샷", "리듬에 맞춘 미세한 핸드헬드"]),
+        description: "노래/랩을 풀로 담는 기준 컷. 편집에서 가장 많이 돌아오는 메인 스틸컷.",
+        tech_note: "35~50mm, 곡 템포에 맞는 셔터/셔터앵글. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "클로즈업 리액션",
+        shot_type: "CU / ECU",
+        movement: "고정 샷",
+        description: "입 모양, 눈빛, 손짓 등 감정이 살아 있는 부분을 타이트하게 잡는 컷.",
+        tech_note: "85mm 근접, 눈 하이라이트/피부 톤 우선. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "B-roll 무브먼트",
+        shot_type: "MS / WS",
+        movement: pickOne(["짐벌 인/아웃", "핸드헬드 워크"]),
+        description: "리듬감 있는 움직임으로 편집 템포를 살리는 B-roll용 스틸컷.",
+        tech_note: "셔터/프레임레이트를 곡 분위기에 맞게. " + pickOne(baseTech),
+      }
+    );
+  } else if (type.includes("브랜딩")) {
+    cuts.push(
+      {
+        cut_title: "브랜드 공간 와이드",
+        shot_type: "WS",
+        movement: pickOne(["천천히 인", "느린 패닝"]),
+        description: `${loc} 전체 구조와 브랜드의 첫인상을 동시에 보여주는 오프닝 컷.`,
+        tech_note: "24~35mm, 수평/수직 정확히. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "키 비주얼·로고 디테일",
+        shot_type: "CU / 인서트",
+        movement: "고정 샷",
+        description: "로고, 제품, 상징 오브젝트를 상징적으로 담는 상단/중간 인서트.",
+        tech_note: "50mm 이상, 얕은 심도, 조명으로 포인트. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "사용자/제작자 스토리",
+        shot_type: "MS / MCU",
+        movement: pickOne(["고정 샷", "아주 미세한 인"]),
+        description: "브랜드를 사용하는 사람, 만드는 사람의 행동과 표정으로 이야기를 보여주는 컷.",
+        tech_note: "인물 노출/피부 톤 중심 세팅. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "마감 시그니처 샷",
+        shot_type: "WS / MS",
+        movement: pickOne(["슬로우 인", "슬로우 아웃"]),
+        description: "슬로건/키 메시지가 들어갈 자리를 남기며 정리해 주는 엔딩 컷.",
+        tech_note: "로고/카피 위치를 고려한 프레이밍. " + pickOne(baseTech),
+      }
+    );
+  } else {
+    // 행사, 유튜브, 기타
+    cuts.push(
+      {
+        cut_title: "공간 무드 와이드",
+        shot_type: "WS",
+        movement: pickOne(["느린 패닝", "고정 샷"]),
+        description: `${loc} 전체 분위기를 한 번에 보여주는 오프닝/브릿지용 컷.`,
+        tech_note: pickOne(baseTech),
+      },
+      {
+        cut_title: "핵심 액션/장면",
+        shot_type: "MS",
+        movement: pickOne(["고정 샷", "간단한 인/아웃"]),
+        description: "영상 목적을 가장 잘 보여주는 행동/상황을 정면으로 담는 컷.",
+        tech_note: pickOne(baseTech),
+      },
+      {
+        cut_title: "디테일 인서트",
+        shot_type: "CU / 인서트",
+        movement: "고정 샷",
+        description: "손, 오브젝트, 화면 등 디테일을 클로즈업으로 채워주는 컷.",
+        tech_note: "프레임 안 정리, 반사/난반사 체크. " + pickOne(baseTech),
+      },
+      {
+        cut_title: "마무리 리액션/뷰",
+        shot_type: "MS / WS",
+        movement: pickOne(["천천히 아웃", "고정 샷"]),
+        description: "영상의 여운을 남기는 마무리 컷. 후반부/엔딩에 사용.",
+        tech_note: pickOne(baseTech),
+      }
+    );
   }
 
-  const arrayBuffer = await res.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
-  return `data:image/png;base64,${base64}`;
+  return cuts;
 }
 
 exports.handler = async (event) => {
-  // GET 요청이면 안내만
+  // GET이면 안내만
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: "이 엔드포인트는 폼을 통해 POST 요청으로만 사용됩니다.",
+      body: "이 엔드포인트는 폼을 통해 POST 요청(스틸컷 설계 요청)으로만 사용됩니다.",
     };
   }
 
   try {
-    // 1) 폼 데이터 파싱
     const body = event.body || "";
     const params = new URLSearchParams(body);
 
@@ -108,107 +204,41 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
+    const summary = makeSummary(input);
+    const cuts = makeCuts(input);
+
     const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
       /\n/g,
       "<br>"
     );
 
-    // 2) 텍스트 프롬프트 만들기 (요약 + 샷리스트)
-    const textPrompt = `
-너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이야.
-아래 프로젝트 정보를 보고,
+    const cutsHtml = cuts
+      .map((cut, idx) => {
+        return `
+        <div style="margin-bottom:14px; padding:12px 10px; border-radius:12px; background:rgba(0,0,0,0.35);">
+          <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${idx + 1}</div>
+          <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
+            ${escapeHtml(cut.cut_title)}
+          </div>
+          <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
+            샷: ${escapeHtml(cut.shot_type)} · 무브: ${escapeHtml(cut.movement)}
+          </div>
+          <div style="font-size:13px; margin-bottom:4px;">
+            ${escapeHtml(cut.description)}
+          </div>
+          <div style="font-size:12px; opacity:0.75;">
+            장비/기술 메모: ${escapeHtml(cut.tech_note)}
+          </div>
+        </div>`;
+      })
+      .join("");
 
-1) 프로젝트 전체를 한 문장으로 요약 (감독 메모 느낌, 60자 내외)
-2) 스틸컷 후보 4~6개를 "번호. 내용" 형태로 작성
-   - 각 번호마다: 컷 이름 / 샷 타입 / 카메라 움직임 / 간단한 설명 정도를 한 줄로 묶어서 써줘.
-   - 예: "1. 오프닝 무드 인서트 - WS / 슬로우 패닝 - 공간 전체 분위기 소개"
-
-형식 예시는 아래와 비슷하게:
-
-요약: ~~~~
-스틸컷 후보:
-1. ...
-2. ...
-3. ...
-
-[프로젝트 정보]
-- 영상 종류: ${input.video_type}
-- 무드/톤: ${input.mood}
-- 영상 길이: ${input.project_length}
-- 로케이션: ${input.location_type}
-- 예산: ${input.budget_level}
-- 크루 규모: ${input.crew_preference}
-- 희망 마감: ${input.deadline}
-- 추가 요청: ${input.extra_notes}
-    `.trim();
-
-    let summary = "요약을 가져오지 못했습니다.";
-    let cutsText = "스틸컷 후보를 가져오지 못했습니다.";
-
-    try {
-      const rawText = await generateTextFromHF(textPrompt);
-
-      // "요약:" / "스틸컷 후보:" 기준으로 대충 나누기
-      // 모델 답변 형식이 약간 달라도 어느 정도 유연하게 처리
-      const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-      let summaryLine = lines.find((l) => l.startsWith("요약")) || lines[0] || "";
-      summaryLine = summaryLine.replace(/^요약[:：]\s*/, "");
-      if (!summaryLine) summaryLine = rawText.slice(0, 80);
-
-      const startIdx = lines.findIndex((l) => l.startsWith("스틸컷 후보"));
-      let cutLines = [];
-      if (startIdx >= 0) {
-        cutLines = lines.slice(startIdx + 1);
-      } else {
-        // "1."로 시작하는 줄들만 모으기
-        cutLines = lines.filter((l) => /^[0-9]+\./.test(l));
-      }
-      if (cutLines.length === 0) {
-        cutLines = lines.slice(1); // 그냥 요약 빼고 나머지 다
-      }
-
-      summary = summaryLine.trim();
-      cutsText = cutLines.join("\n");
-      if (!cutsText.trim()) {
-        cutsText = rawText;
-      }
-    } catch (e) {
-      console.error("HF 텍스트 생성 오류:", e);
-      summary = "텍스트 생성 중 오류가 발생했습니다.";
-      cutsText =
-        (e && e.message) || "HuggingFace 텍스트 API 오류로 스틸컷 리스트를 생성하지 못했습니다.";
-    }
-
-    // 3) 대표 스틸컷 이미지 프롬프트
-    let heroImageUrl = null;
-    let heroImageError = null;
-
-    const imagePrompt = `
-${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
-무드: ${input.mood || "감성적인"}
-로케이션: ${input.location_type || "실내/야외"}
-설명: ${summary || "시네마틱한 브랜드/웨딩/뮤직비디오 느낌"}
-
-영화 스틸컷 같은 시네마틱 사진, 고해상도, 사실적인 스타일.
-    `.trim();
-
-    try {
-      heroImageUrl = await generateImageFromHF(imagePrompt);
-    } catch (e) {
-      console.error("HF 이미지 생성 오류:", e);
-      heroImageUrl = null;
-      heroImageError =
-        (e && e.message) || "HuggingFace 이미지 API 오류로 대표 이미지를 생성하지 못했습니다.";
-    }
-
-    // 4) HTML 렌더링
     const html = `
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>AI 스틸컷 추천 결과 (HuggingFace)</title>
+  <title>AI 스틸컷 추천 결과 (로컬 버전)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -264,26 +294,18 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
       text-decoration: none;
       color: #7BA5FF;
     }
-    .hero-img {
+    .placeholder-img {
       width: 100%;
+      height: 180px;
       border-radius: 18px;
       margin-top: 12px;
       margin-bottom: 8px;
-      display: block;
-      object-fit: cover;
-    }
-    .hint {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-top: 4px;
-    }
-    pre {
-      white-space: pre-wrap;
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 13px;
-      background: rgba(0,0,0,0.35);
-      padding: 10px;
-      border-radius: 10px;
-      margin: 0;
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -291,28 +313,21 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
   <div class="wrapper">
     <header>
       <div class="logo">FIDUCIA · AI STILLCUT</div>
-      <div class="tagline">HuggingFace 기반 스틸컷 · 요약 생성</div>
+      <div class="tagline">로컬 규칙 기반 스틸컷 · 샷리스트</div>
     </header>
 
     <main>
-      <h1>AI 스틸컷 설계 결과 (HF 버전)</h1>
+      <h1>스틸컷 설계 결과 (테스트 버전)</h1>
       <p style="font-size:13px; opacity:0.85;">
-        텍스트와 이미지는 모두 HuggingFace Inference API를 통해 생성된 결과입니다.
-        (OpenAI는 전혀 사용하지 않습니다.)
+        외부 AI 서버 없이, 입력하신 정보를 바탕으로 샷리스트와 요약을 자동 생성한 결과입니다.
+        (실제 운영 시에는 이 자리에 OpenAI/HuggingFace를 다시 연결할 수 있습니다.)
       </p>
 
       <section>
-        <h2>대표 스틸컷 (Stable Diffusion)</h2>
-        ${
-          heroImageUrl
-            ? `<img src="${heroImageUrl}" alt="대표 스틸컷" class="hero-img" />`
-            : `<p style="font-size:13px; opacity:0.85;">대표 이미지를 생성하지 못했습니다.</p>`
-        }
-        ${
-          heroImageError
-            ? `<div class="hint">이미지 서버 메시지: ${escapeHtml(heroImageError)}</div>`
-            : ""
-        }
+        <h2>대표 스틸컷 자리</h2>
+        <div class="placeholder-img">
+          대표 스틸컷 이미지 영역 (나중에 AI 이미지 연결 예정)
+        </div>
       </section>
 
       <section>
@@ -341,15 +356,15 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
       </section>
 
       <section>
-        <h2>AI 한 줄 요약</h2>
+        <h2>요약 메모</h2>
         <p style="font-size:14px; opacity:0.95;">
           ${escapeHtml(summary)}
         </p>
       </section>
 
       <section>
-        <h2>AI 스틸컷 후보 (텍스트)</h2>
-        <pre>${escapeHtml(cutsText)}</pre>
+        <h2>스틸컷 후보 리스트</h2>
+        ${cutsHtml}
       </section>
 
       <a href="/" class="back-link">← 다시 입력 페이지로 돌아가기</a>
