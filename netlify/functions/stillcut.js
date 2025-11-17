@@ -1,12 +1,8 @@
 // netlify/functions/stillcut.js
-// OpenAI + 로컬 규칙 엔진 (깨끗한 버전)
+// ✅ OpenAI SDK(require) 안 쓰고, fetch로만 호출하는 버전
+// ✅ OpenAI가 실패하면 로컬 규칙 엔진으로 자동 fallback
 
-const OpenAI = require("openai");
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
+// HTML 이스케이프
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -19,7 +15,7 @@ function pickOne(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 로컬 요약 (fallback)
+// 🔹 로컬 요약 (fallback)
 function makeSummaryLocal(input) {
   const type = input.video_type || "프로젝트";
   const mood = input.mood || pickOne(["감성적인", "시네마틱한", "따뜻한", "도시적인"]);
@@ -36,7 +32,7 @@ function makeSummaryLocal(input) {
   return `${mood} 톤으로 ${len} 분량의 ${type}을(를) ${loc} ${pickOne(endings)}`;
 }
 
-// 로컬 샷리스트 (fallback)
+// 🔹 로컬 샷리스트 (fallback)
 function makeCutsLocal(input) {
   const type = input.video_type || "";
   const mood = input.mood || "감성적인";
@@ -179,38 +175,12 @@ function makeCutsLocal(input) {
   return cuts;
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: "이 엔드포인트는 폼을 통해 POST 요청으로만 사용됩니다.",
-    };
-  }
+// 🔹 OpenAI 호출 (fetch 사용)
+async function makeWithOpenAI(input) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
 
-  try {
-    const body = event.body || "";
-    const params = new URLSearchParams(body);
-
-    const input = {
-      video_url: params.get("video_url") || "",
-      video_type: params.get("video_type") || "",
-      mood: params.get("mood") || "",
-      project_length: params.get("project_length") || "",
-      location_type: params.get("location_type") || "",
-      budget_level: params.get("budget_level") || "",
-      crew_preference: params.get("crew_preference") || "",
-      deadline: params.get("deadline") || "",
-      extra_notes: params.get("extra_notes") || "",
-    };
-
-    let summary = makeSummaryLocal(input);
-    let cuts = makeCutsLocal(input);
-    let usedOpenAI = false;
-
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const userPrompt = `
+  const userPrompt = `
 너는 상업 영상/웨딩/브랜딩을 많이 찍어본 시니어 감독이야.
 아래 프로젝트 정보를 보고,
 
@@ -247,33 +217,83 @@ exports.handler = async (event) => {
     }
   ]
 }
-        `.trim();
+  `.trim();
 
-        const completion = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: "너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이다.",
-            },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.8,
-        });
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이다.",
+        },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.8,
+    }),
+  });
 
-        const content = completion.choices?.[0]?.message?.content || "{}";
-        const data = JSON.parse(content);
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`OpenAI API 오류: ${res.status} ${msg}`);
+  }
 
-        if (data.summary) summary = String(data.summary).trim();
-        if (Array.isArray(data.cuts) && data.cuts.length > 0) {
-          cuts = data.cuts.slice(0, 6);
-        }
+  const json = await res.json();
+  const content = json.choices?.[0]?.message?.content || "{}";
+  const data = JSON.parse(content);
 
-        usedOpenAI = true;
-      } catch (e) {
-        console.error("OpenAI 호출/파싱 오류, 로컬 fallback으로 진행:", e);
+  return {
+    summary: data.summary,
+    cuts: Array.isArray(data.cuts) ? data.cuts : [],
+  };
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+      body: "이 엔드포인트는 폼을 통해 POST 요청으로만 사용됩니다.",
+    };
+  }
+
+  try {
+    const body = event.body || "";
+    const params = new URLSearchParams(body);
+
+    const input = {
+      video_url: params.get("video_url") || "",
+      video_type: params.get("video_type") || "",
+      mood: params.get("mood") || "",
+      project_length: params.get("project_length") || "",
+      location_type: params.get("location_type") || "",
+      budget_level: params.get("budget_level") || "",
+      crew_preference: params.get("crew_preference") || "",
+      deadline: params.get("deadline") || "",
+      extra_notes: params.get("extra_notes") || "",
+    };
+
+    // 기본값은 로컬 엔진
+    let summary = makeSummaryLocal(input);
+    let cuts = makeCutsLocal(input);
+    let usedOpenAI = false;
+
+    // OpenAI 시도
+    try {
+      const ai = await makeWithOpenAI(input);
+      if (ai.summary) summary = String(ai.summary).trim();
+      if (ai.cuts && ai.cuts.length > 0) {
+        cuts = ai.cuts.slice(0, 6);
       }
+      usedOpenAI = true;
+    } catch (e) {
+      console.error("OpenAI 호출 실패, 로컬 fallback 사용:", e.message || e);
     }
 
     const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
@@ -378,6 +398,11 @@ exports.handler = async (event) => {
       font-size: 13px;
       opacity: 0.9;
     }
+    .hint {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -389,6 +414,11 @@ exports.handler = async (event) => {
 
     <main>
       <h1>스틸컷 설계 결과</h1>
+      <p style="font-size:13px; opacity:0.8;">
+        ${usedOpenAI
+          ? "OpenAI(gpt-4o-mini)를 사용해 요약과 스틸컷 후보를 생성했습니다."
+          : "현재는 로컬 규칙 기반으로 요약/샷리스트를 생성한 결과입니다."}
+      </p>
 
       <section>
         <h2>대표 스틸컷 자리</h2>
