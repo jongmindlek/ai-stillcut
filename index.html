@@ -1,7 +1,5 @@
 // netlify/functions/stillcut.js
-// ✅ OpenAI가 1순위로 요약/샷리스트 생성
-// ✅ 실패하면 지금 쓰던 로컬 규칙 엔진으로 자동 fallback
-// ✅ 이미지(대표컷)는 아직 placeholder 그대로 (나중에 OpenAI 이미지만 추가하면 됨)
+// OpenAI + 로컬 규칙 엔진 (깨끗한 버전)
 
 const OpenAI = require("openai");
 
@@ -9,7 +7,6 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// HTML 이스케이프
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -18,12 +15,11 @@ function escapeHtml(str = "") {
     .replace(/"/g, "&quot;");
 }
 
-// 랜덤 유틸
 function pickOne(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 🔹 로컬 요약 (fallback용)
+// 로컬 요약 (fallback)
 function makeSummaryLocal(input) {
   const type = input.video_type || "프로젝트";
   const mood = input.mood || pickOne(["감성적인", "시네마틱한", "따뜻한", "도시적인"]);
@@ -40,7 +36,7 @@ function makeSummaryLocal(input) {
   return `${mood} 톤으로 ${len} 분량의 ${type}을(를) ${loc} ${pickOne(endings)}`;
 }
 
-// 🔹 로컬 샷리스트 (fallback용)
+// 로컬 샷리스트 (fallback)
 function makeCutsLocal(input) {
   const type = input.video_type || "";
   const mood = input.mood || "감성적인";
@@ -60,14 +56,14 @@ function makeCutsLocal(input) {
         cut_title: "신부/신랑 디테일 인서트",
         shot_type: "CU / 인서트",
         movement: pickOne(["고정 샷", "아주 미세한 핸드헬드"]),
-        description: `드레스, 부케, 반지 등의 디테일을 ${mood} 톤으로 담아서 오프닝 무드를 잡는 컷.`,
+        description: `드레스, 부케, 반지 등의 디테일을 ${mood} 톤으로 담아 오프닝 무드를 만드는 컷.`,
         tech_note: "50mm 근접, 얕은 심도, 피부/하이라이트 관리. " + pickOne(baseTech),
       },
       {
         cut_title: "식장 전체 분위기 와이드",
         shot_type: "WS",
         movement: pickOne(["느린 패닝", "슬로우 짐벌 인"]),
-        description: `${loc} 전체 구조와 하객 분위기를 한 번에 보여주는 인트로/중간 브릿지 컷.`,
+        description: `${loc} 전체 구조와 하객 분위기를 한 번에 보여주는 인트로 / 브릿지 컷.`,
         tech_note: "24~35mm 광각, 수평/수직 라인 정리. " + pickOne(baseTech),
       },
       {
@@ -81,7 +77,7 @@ function makeCutsLocal(input) {
         cut_title: "식 후 하객 축하 무드",
         shot_type: "MS / 2SHOT / 군중샷",
         movement: pickOne(["핸드헬드 워킹", "가벼운 짐벌 워크"]),
-        description: "가벼운 대화, 웃음, 포옹 등 전체적인 행복한 공기를 담는 컷.",
+        description: "대화, 웃음, 포옹 등 전체적인 행복한 공기를 담는 컷.",
         tech_note: "35mm 근처, 셔터 1/100 이상으로 흔들림 관리. " + pickOne(baseTech),
       }
     );
@@ -129,14 +125,14 @@ function makeCutsLocal(input) {
         cut_title: "키 비주얼·로고 디테일",
         shot_type: "CU / 인서트",
         movement: "고정 샷",
-        description: "로고, 제품, 상징 오브젝트를 상징적으로 담는 상단/중간 인서트.",
+        description: "로고, 제품, 상징 오브젝트를 상징적으로 담는 인서트.",
         tech_note: "50mm 이상, 얕은 심도, 조명으로 포인트. " + pickOne(baseTech),
       },
       {
         cut_title: "사용자/제작자 스토리",
         shot_type: "MS / MCU",
         movement: pickOne(["고정 샷", "아주 미세한 인"]),
-        description: "브랜드를 사용하는 사람, 만드는 사람의 행동과 표정으로 이야기를 보여주는 컷.",
+        description: "브랜드를 사용하는 사람/만드는 사람의 행동과 표정을 담는 컷.",
         tech_note: "인물 노출/피부 톤 중심 세팅. " + pickOne(baseTech),
       },
       {
@@ -148,7 +144,6 @@ function makeCutsLocal(input) {
       }
     );
   } else {
-    // 행사, 유튜브, 기타
     cuts.push(
       {
         cut_title: "공간 무드 와이드",
@@ -213,7 +208,6 @@ exports.handler = async (event) => {
     let cuts = makeCutsLocal(input);
     let usedOpenAI = false;
 
-    // 🔹 1순위: OpenAI로 요약 + 샷리스트 시도
     if (process.env.OPENAI_API_KEY) {
       try {
         const userPrompt = `
@@ -384,11 +378,6 @@ exports.handler = async (event) => {
       font-size: 13px;
       opacity: 0.9;
     }
-    .hint {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-top: 4px;
-    }
   </style>
 </head>
 <body>
@@ -400,18 +389,11 @@ exports.handler = async (event) => {
 
     <main>
       <h1>스틸컷 설계 결과</h1>
-      <p style="font-size:13px; opacity:0.85;">
-        ${
-          usedOpenAI
-            ? "OpenAI(gpt-4o-mini)를 이용해 요약과 스틸컷 후보를 생성했습니다. (문제 발생 시에는 로컬 규칙으로 자동 보완됩니다.)"
-            : "현재는 로컬 규칙 기반으로 요약/샷리스트를 생성한 결과입니다. (나중에 OpenAI 연결 후 자동으로 업그레이드됩니다.)"
-        }
-      </p>
 
       <section>
         <h2>대표 스틸컷 자리</h2>
         <div class="placeholder-img">
-          대표 스틸컷 이미지 영역 (나중에 OpenAI 이미지 연결 예정)
+          대표 스틸컷 이미지 영역 (나중에 AI 이미지 연결 예정)
         </div>
       </section>
 
