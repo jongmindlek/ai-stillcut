@@ -1,6 +1,6 @@
 // netlify/functions/stillcut.js
-// ✅ OpenAI SDK(require) 안 쓰고, fetch로만 호출하는 버전
-// ✅ OpenAI가 실패하면 로컬 규칙 엔진으로 자동 fallback
+// ✅ 텍스트: OpenAI + 로컬 규칙 fallback
+// ✅ 이미지: OpenAI gpt-image-1로 대표 스틸컷 생성 + 실패 시 문구 표시
 
 // HTML 이스케이프
 function escapeHtml(str = "") {
@@ -175,7 +175,7 @@ function makeCutsLocal(input) {
   return cuts;
 }
 
-// 🔹 OpenAI 호출 (fetch 사용)
+// 🔹 OpenAI 텍스트 (요약 + 샷리스트)
 async function makeWithOpenAI(input) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
@@ -222,7 +222,7 @@ async function makeWithOpenAI(input) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -241,7 +241,7 @@ async function makeWithOpenAI(input) {
 
   if (!res.ok) {
     const msg = await res.text();
-    throw new Error(`OpenAI API 오류: ${res.status} ${msg}`);
+    throw new Error(`OpenAI 텍스트 API 오류: ${res.status} ${msg}`);
   }
 
   const json = await res.json();
@@ -252,6 +252,47 @@ async function makeWithOpenAI(input) {
     summary: data.summary,
     cuts: Array.isArray(data.cuts) ? data.cuts : [],
   };
+}
+
+// 🔹 OpenAI 이미지 (대표 스틸컷)
+async function makeImageWithOpenAI(input, summary) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
+
+  // 이미지 프롬프트: 영상 타입 + 무드 + 로케이션 + 요약을 조합
+  const prompt = `
+${input.video_type || "영상"}의 대표 스틸컷.
+무드: ${input.mood || "감성적인"}
+로케이션: ${input.location_type || "실내/야외 공간"}
+요약: ${summary || ""}
+
+영화 스틸컷 같은 시네마틱 사진, 고해상도, 사실적인 스타일, 16:9 비율, 섬세한 조명.
+  `.trim();
+
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt,
+      size: "1024x576",
+      response_format: "b64_json",
+    }),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`OpenAI 이미지 API 오류: ${res.status} ${msg}`);
+  }
+
+  const json = await res.json();
+  const b64 = json.data?.[0]?.b64_json;
+  if (!b64) throw new Error("이미지 응답에 b64_json이 없습니다.");
+
+  return `data:image/png;base64,${b64}`;
 }
 
 exports.handler = async (event) => {
@@ -279,21 +320,31 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
-    // 기본값은 로컬 엔진
+    // 1) 기본값: 로컬 엔진
     let summary = makeSummaryLocal(input);
     let cuts = makeCutsLocal(input);
-    let usedOpenAI = false;
+    let usedOpenAIText = false;
+    let heroImageUrl = null;
+    let heroImageError = null;
 
-    // OpenAI 시도
+    // 2) OpenAI 텍스트 시도
     try {
       const ai = await makeWithOpenAI(input);
       if (ai.summary) summary = String(ai.summary).trim();
       if (ai.cuts && ai.cuts.length > 0) {
         cuts = ai.cuts.slice(0, 6);
       }
-      usedOpenAI = true;
+      usedOpenAIText = true;
     } catch (e) {
-      console.error("OpenAI 호출 실패, 로컬 fallback 사용:", e.message || e);
+      console.error("OpenAI 텍스트 실패, 로컬 fallback 사용:", e.message || e);
+    }
+
+    // 3) OpenAI 이미지 시도 (요약 결과를 프롬프트에 같이 사용)
+    try {
+      heroImageUrl = await makeImageWithOpenAI(input, summary);
+    } catch (e) {
+      console.error("OpenAI 이미지 생성 실패:", e.message || e);
+      heroImageError = e.message || String(e);
     }
 
     const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
@@ -385,6 +436,14 @@ exports.handler = async (event) => {
       text-decoration: none;
       color: #7BA5FF;
     }
+    .hero-img {
+      width: 100%;
+      border-radius: 18px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      display: block;
+      object-fit: cover;
+    }
     .placeholder-img {
       width: 100%;
       height: 180px;
@@ -409,22 +468,29 @@ exports.handler = async (event) => {
   <div class="wrapper">
     <header>
       <div class="logo">FIDUCIA · AI STILLCUT</div>
-      <div class="tagline">스틸컷 · 샷리스트 자동 설계</div>
+      <div class="tagline">스틸컷 · 샷리스트 · 대표 이미지 자동 설계</div>
     </header>
 
     <main>
       <h1>스틸컷 설계 결과</h1>
       <p style="font-size:13px; opacity:0.8;">
-        ${usedOpenAI
-          ? "OpenAI(gpt-4o-mini)를 사용해 요약과 스틸컷 후보를 생성했습니다."
-          : "현재는 로컬 규칙 기반으로 요약/샷리스트를 생성한 결과입니다."}
+        ${usedOpenAIText
+          ? "OpenAI(gpt-4o-mini, gpt-image-1)을 사용해 요약 · 스틸컷 후보 · 대표 이미지를 생성했습니다."
+          : "현재는 로컬 규칙 기반으로 요약/샷리스트를 생성한 결과입니다. (이미지는 생성에 실패했을 수 있습니다.)"}
       </p>
 
       <section>
-        <h2>대표 스틸컷 자리</h2>
-        <div class="placeholder-img">
-          대표 스틸컷 이미지 영역 (나중에 AI 이미지 연결 예정)
-        </div>
+        <h2>대표 스틸컷</h2>
+        ${
+          heroImageUrl
+            ? `<img src="${heroImageUrl}" alt="대표 스틸컷" class="hero-img" />`
+            : `<div class="placeholder-img">대표 스틸컷 이미지를 생성하지 못했습니다.</div>`
+        }
+        ${
+          heroImageError
+            ? `<div class="hint">이미지 오류: ${escapeHtml(heroImageError)}</div>`
+            : ""
+        }
       </section>
 
       <section>
