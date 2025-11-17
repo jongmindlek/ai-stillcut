@@ -1,12 +1,8 @@
 // netlify/functions/stillcut.js
+// ✅ OpenAI 전부 제거
+// ✅ HuggingFace 텍스트 + 이미지로만 작동하는 버전
 
-const OpenAI = require("openai");
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// 간단한 HTML 이스케이프
+// HTML 이스케이프 함수
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -15,8 +11,78 @@ function escapeHtml(str = "") {
     .replace(/"/g, "&quot;");
 }
 
+// HuggingFace 텍스트 생성 호출
+async function generateTextFromHF(prompt) {
+  if (!process.env.HF_API_KEY) {
+    throw new Error("HF_API_KEY 환경변수가 설정되지 않았습니다.");
+  }
+
+  const res = await fetch(
+    "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.HF_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 400,
+          temperature: 0.8,
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`HuggingFace 텍스트 API 오류: ${res.status} ${msg}`);
+  }
+
+  const data = await res.json();
+  // HF text-generation은 보통 [{ generated_text: "..." }] 형태로 옴
+  let text = "";
+  if (Array.isArray(data) && data[0]?.generated_text) {
+    text = data[0].generated_text;
+  } else if (data.generated_text) {
+    text = data.generated_text;
+  } else {
+    text = JSON.stringify(data);
+  }
+  return text.trim();
+}
+
+// HuggingFace 이미지 생성 호출 (Stable Diffusion)
+async function generateImageFromHF(prompt) {
+  if (!process.env.HF_API_KEY) {
+    throw new Error("HF_API_KEY 환경변수가 설정되지 않았습니다.");
+  }
+
+  const res = await fetch(
+    "https://api-inference.huggingface.co/models/stabilityai/sdxl-base-1.0",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.HF_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ inputs: prompt }),
+    }
+  );
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`HuggingFace 이미지 API 오류: ${res.status} ${msg}`);
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+  return `data:image/png;base64,${base64}`;
+}
+
 exports.handler = async (event) => {
-  // GET이면 안내만
+  // GET 요청이면 안내만
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 200,
@@ -26,10 +92,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.");
-    }
-
     // 1) 폼 데이터 파싱
     const body = event.body || "";
     const params = new URLSearchParams(body);
@@ -46,19 +108,28 @@ exports.handler = async (event) => {
       extra_notes: params.get("extra_notes") || "",
     };
 
-    // 2) OpenAI에 "요약 + 스틸컷 후보 JSON" 요청
-    const userPrompt = `
-너는 상업 영상/웨딩/브랜딩을 많이 찍어본 시니어 영상 감독이자 프로듀서야.
-아래 프로젝트 정보를 바탕으로,
+    const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
+      /\n/g,
+      "<br>"
+    );
 
-1) 프로젝트 한 줄 요약 (감독 메모 느낌, 60자 이내)
-2) 스틸컷 후보 4~6개
-   - 각 후보는 다음 정보를 포함:
-     - cut_title: 컷 이름
-     - shot_type: 샷 타입 (CU/MCU/WS/2SHOT 등)
-     - movement: 카메라 무브
-     - description: 컷 설명
-     - tech_note: 카메라/렌즈/조명 메모
+    // 2) 텍스트 프롬프트 만들기 (요약 + 샷리스트)
+    const textPrompt = `
+너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이야.
+아래 프로젝트 정보를 보고,
+
+1) 프로젝트 전체를 한 문장으로 요약 (감독 메모 느낌, 60자 내외)
+2) 스틸컷 후보 4~6개를 "번호. 내용" 형태로 작성
+   - 각 번호마다: 컷 이름 / 샷 타입 / 카메라 움직임 / 간단한 설명 정도를 한 줄로 묶어서 써줘.
+   - 예: "1. 오프닝 무드 인서트 - WS / 슬로우 패닝 - 공간 전체 분위기 소개"
+
+형식 예시는 아래와 비슷하게:
+
+요약: ~~~~
+스틸컷 후보:
+1. ...
+2. ...
+3. ...
 
 [프로젝트 정보]
 - 영상 종류: ${input.video_type}
@@ -69,135 +140,67 @@ exports.handler = async (event) => {
 - 크루 규모: ${input.crew_preference}
 - 희망 마감: ${input.deadline}
 - 추가 요청: ${input.extra_notes}
-
-반드시 아래 JSON 형식으로만 한국어로 응답해.
-코드블록 없이 순수 JSON만:
-
-{
-  "summary": "프로젝트 한 줄 요약",
-  "cuts": [
-    {
-      "cut_title": "...",
-      "shot_type": "...",
-      "movement": "...",
-      "description": "...",
-      "tech_note": "..."
-    }
-  ]
-}
     `.trim();
 
-    let summary = "";
-    let cuts = [];
+    let summary = "요약을 가져오지 못했습니다.";
+    let cutsText = "스틸컷 후보를 가져오지 못했습니다.";
 
     try {
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: "너는 상업 영상/브랜딩/웨딩을 많이 찍어본 시니어 감독이다." },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.8,
-      });
+      const rawText = await generateTextFromHF(textPrompt);
 
-      const content = completion.choices?.[0]?.message?.content || "{}";
-      const data = JSON.parse(content);
+      // "요약:" / "스틸컷 후보:" 기준으로 대충 나누기
+      // 모델 답변 형식이 약간 달라도 어느 정도 유연하게 처리
+      const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
-      summary = (data.summary || "").trim();
-      if (!summary) summary = "AI 요약을 가져오지 못했습니다.";
+      let summaryLine = lines.find((l) => l.startsWith("요약")) || lines[0] || "";
+      summaryLine = summaryLine.replace(/^요약[:：]\s*/, "");
+      if (!summaryLine) summaryLine = rawText.slice(0, 80);
 
-      if (Array.isArray(data.cuts)) {
-        cuts = data.cuts.slice(0, 6);
+      const startIdx = lines.findIndex((l) => l.startsWith("스틸컷 후보"));
+      let cutLines = [];
+      if (startIdx >= 0) {
+        cutLines = lines.slice(startIdx + 1);
+      } else {
+        // "1."로 시작하는 줄들만 모으기
+        cutLines = lines.filter((l) => /^[0-9]+\./.test(l));
       }
-    } catch (aiErr) {
-      console.error("OpenAI 텍스트 호출/파싱 오류:", aiErr);
-      summary = "AI 요약 생성 중 오류가 발생했습니다.";
-      cuts = [];
+      if (cutLines.length === 0) {
+        cutLines = lines.slice(1); // 그냥 요약 빼고 나머지 다
+      }
+
+      summary = summaryLine.trim();
+      cutsText = cutLines.join("\n");
+      if (!cutsText.trim()) {
+        cutsText = rawText;
+      }
+    } catch (e) {
+      console.error("HF 텍스트 생성 오류:", e);
+      summary = "텍스트 생성 중 오류가 발생했습니다.";
+      cutsText =
+        (e && e.message) || "HuggingFace 텍스트 API 오류로 스틸컷 리스트를 생성하지 못했습니다.";
     }
 
-    // 3) 대표컷 1개 골라서 HuggingFace Stable Diffusion으로 이미지 생성
+    // 3) 대표 스틸컷 이미지 프롬프트
     let heroImageUrl = null;
     let heroImageError = null;
 
-    const heroCut = cuts[0];
-
-    if (heroCut && process.env.HF_API_KEY) {
-      const imagePrompt = `
+    const imagePrompt = `
 ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
 무드: ${input.mood || "감성적인"}
 로케이션: ${input.location_type || "실내/야외"}
-컷 이름: ${heroCut.cut_title || ""}
-샷 타입: ${heroCut.shot_type || ""}
-카메라 무브: ${heroCut.movement || ""}
-컷 설명: ${heroCut.description || ""}
+설명: ${summary || "시네마틱한 브랜드/웨딩/뮤직비디오 느낌"}
 
-시네마틱, 고화질, 영화 스틸 느낌, 사실적인 사진 스타일.
-      `.trim();
+영화 스틸컷 같은 시네마틱 사진, 고해상도, 사실적인 스타일.
+    `.trim();
 
-      try {
-        // Netlify 함수는 Node 18+ 환경이라 fetch / Buffer 사용 가능
-        const hfRes = await fetch(
-          "https://api-inference.huggingface.co/models/stabilityai/sdxl-base-1.0",
-          {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${process.env.HF_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ inputs: imagePrompt }),
-          }
-        );
-
-        if (!hfRes.ok) {
-          heroImageError = `HuggingFace 상태 코드: ${hfRes.status}`;
-        } else {
-          const arrayBuffer = await hfRes.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString("base64");
-          heroImageUrl = `data:image/png;base64,${base64}`;
-        }
-      } catch (imgErr) {
-        console.error("HuggingFace 이미지 생성 오류:", imgErr);
-        heroImageError =
-          (imgErr && imgErr.message) ||
-          "HuggingFace 이미지 생성 중 알 수 없는 오류";
-      }
-    } else if (!process.env.HF_API_KEY) {
-      heroImageError = "HF_API_KEY 환경변수가 설정되지 않아 이미지를 생성할 수 없습니다.";
+    try {
+      heroImageUrl = await generateImageFromHF(imagePrompt);
+    } catch (e) {
+      console.error("HF 이미지 생성 오류:", e);
+      heroImageUrl = null;
+      heroImageError =
+        (e && e.message) || "HuggingFace 이미지 API 오류로 대표 이미지를 생성하지 못했습니다.";
     }
-
-    const safeNotes = escapeHtml(input.extra_notes || "입력 없음").replace(
-      /\n/g,
-      "<br>"
-    );
-
-    const cutsHtml =
-      cuts.length > 0
-        ? cuts
-            .map((cut, idx) => {
-              return `
-        <div style="margin-bottom:14px; padding:12px 10px; border-radius:12px; background:rgba(0,0,0,0.35);">
-          <div style="font-size:13px; opacity:0.75; margin-bottom:2px;">컷 ${
-            idx + 1
-          }</div>
-          <div style="font-size:15px; font-weight:600; margin-bottom:4px;">
-            ${escapeHtml(cut.cut_title || "제목 없음")}
-          </div>
-          <div style="font-size:12px; opacity:0.8; margin-bottom:6px;">
-            샷: ${escapeHtml(cut.shot_type || "정보 없음")} · 무브: ${escapeHtml(
-                cut.movement || "정보 없음"
-              )}
-          </div>
-          <div style="font-size:13px; margin-bottom:4px;">
-            ${escapeHtml(cut.description || "설명 없음")}
-          </div>
-          <div style="font-size:12px; opacity:0.75;">
-            장비/기술 메모: ${escapeHtml(cut.tech_note || "메모 없음")}
-          </div>
-        </div>`;
-            })
-            .join("")
-        : `<p style="font-size:13px; opacity:0.85;">스틸컷 후보를 가져오지 못했습니다.</p>`;
 
     // 4) HTML 렌더링
     const html = `
@@ -205,7 +208,7 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>AI 스틸컷 추천 결과</title>
+  <title>AI 스틸컷 추천 결과 (HuggingFace)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -274,19 +277,28 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
       opacity: 0.7;
       margin-top: 4px;
     }
+    pre {
+      white-space: pre-wrap;
+      font-size: 13px;
+      background: rgba(0,0,0,0.35);
+      padding: 10px;
+      border-radius: 10px;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <header>
       <div class="logo">FIDUCIA · AI STILLCUT</div>
-      <div class="tagline">스틸컷 · 장비 · 일정 추천</div>
+      <div class="tagline">HuggingFace 기반 스틸컷 · 요약 생성</div>
     </header>
 
     <main>
-      <h1>AI 스틸컷 설계 결과</h1>
+      <h1>AI 스틸컷 설계 결과 (HF 버전)</h1>
       <p style="font-size:13px; opacity:0.85;">
-        입력하신 프로젝트 정보를 바탕으로 텍스트는 OpenAI, 대표 이미지는 HuggingFace Stable Diffusion으로 생성합니다.
+        텍스트와 이미지는 모두 HuggingFace Inference API를 통해 생성된 결과입니다.
+        (OpenAI는 전혀 사용하지 않습니다.)
       </p>
 
       <section>
@@ -336,8 +348,8 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
       </section>
 
       <section>
-        <h2>AI 스틸컷 후보</h2>
-        ${cutsHtml}
+        <h2>AI 스틸컷 후보 (텍스트)</h2>
+        <pre>${escapeHtml(cutsText)}</pre>
       </section>
 
       <a href="/" class="back-link">← 다시 입력 페이지로 돌아가기</a>
@@ -363,5 +375,4 @@ ${input.video_type || "영상"}의 대표 스틸컷 콘셉트.
       body: "서버에서 예기치 못한 오류가 발생했습니다.\n\n" + msg,
     };
   }
-  
 };
