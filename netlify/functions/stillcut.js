@@ -1,6 +1,6 @@
 // netlify/functions/stillcut.js
 // 텍스트: OpenAI + 로컬 규칙 fallback
-// 이미지: OpenAI gpt-image-1 시도 + 실패 시 플레이스홀더
+// 이미지: gpt-image-1 사용, URL 방식 (response_format 제거)
 
 function escapeHtml(str = "") {
   return String(str)
@@ -253,7 +253,7 @@ async function makeWithOpenAI(input) {
   };
 }
 
-// OpenAI 이미지 (대표 스틸컷)
+// OpenAI 이미지 (대표 스틸컷) – URL 사용
 async function makeImageWithOpenAI(input, summary) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
@@ -277,7 +277,8 @@ ${input.video_type || "영상"}의 대표 스틸컷.
       model: "gpt-image-1",
       prompt,
       size: "1024x576",
-      response_format: "b64_json",
+      n: 1
+      // response_format 제거 → 기본 url 사용
     }),
   });
 
@@ -287,10 +288,10 @@ ${input.video_type || "영상"}의 대표 스틸컷.
   }
 
   const json = await res.json();
-  const b64 = json.data?.[0]?.b64_json;
-  if (!b64) throw new Error("이미지 응답에 b64_json이 없습니다.");
+  const url = json.data?.[0]?.url;
+  if (!url) throw new Error("이미지 응답에 url이 없습니다.");
 
-  return `data:image/png;base64,${b64}`;
+  return url;
 }
 
 exports.handler = async (event) => {
@@ -336,7 +337,7 @@ exports.handler = async (event) => {
       console.error("OpenAI 텍스트 실패, 로컬 fallback 사용:", e.message || e);
     }
 
-    // 2) 이미지 시도 (요약 결과 활용)
+    // 2) 이미지 시도
     try {
       heroImageUrl = await makeImageWithOpenAI(input, summary);
     } catch (e) {
