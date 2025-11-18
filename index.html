@@ -2,455 +2,335 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>FIDUCIA · AI 스틸컷 설계 베타</title>
+  <title>Ai 스틸컷 서비스</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- 여기 안은 "디자인"을 담당하는 부분 (CSS) -->
   <style>
+    /* 전체 기본 설정 */
     * {
       box-sizing: border-box;
-    }
-    :root {
-      --brand-primary: #3A6CF3;
-      --brand-primary-soft: #7BA5FF;
-      --bg-body: #07080b;
-      --bg-card: rgba(7,8,11,0.95);
-      --border-soft: rgba(255,255,255,0.12);
-      --text-main: #f5f5f5;
-      --text-soft: rgba(255,255,255,0.78);
     }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #151827 0, #07080b 48%, #020307 100%);
-      color: var(--text-main);
-      line-height: 1.6;
+      background: #07080b;            /* 어두운 배경 */
+      color: #f5f5f5;                 /* 밝은 글씨 */
+      line-height: 1.5;
     }
+
+    /* 가운데 정렬용 박스 */
     .wrapper {
-      max-width: 960px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 24px 16px 64px;
     }
 
+    /* 위쪽 로고/헤더 */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
       margin-bottom: 24px;
-      gap: 12px;
-      flex-wrap: wrap;
     }
     .logo {
       font-size: 14px;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       font-weight: 700;
-    }
-    .logo-mark {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .logo-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-soft));
-      box-shadow: 0 0 12px rgba(58,108,243,0.8);
     }
     .tagline {
       font-size: 12px;
       opacity: 0.8;
     }
 
-    main {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr);
-      gap: 22px;
-    }
-
-    @media (min-width: 880px) {
-      main {
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-      }
-    }
-
+    /* 제목 & 설명 */
     h1 {
       font-size: 26px;
-      margin: 10px 0 8px;
+      margin: 24px 0 8px;
     }
     .lead {
       font-size: 14px;
-      color: var(--text-soft);
-      margin-bottom: 14px;
-    }
-    .chip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .chip {
-      font-size: 11px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.22);
-      opacity: 0.88;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 12px;
     }
 
+    /* 카드 모양 박스 */
     .card {
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.12), transparent 55%),
+        radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 55%),
         radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 55%);
       border-radius: 18px;
-      border: 1px solid var(--border-soft);
+      border: 1px solid rgba(255,255,255,0.12);
       padding: 20px 18px;
+      max-width: 600px;
+      margin-bottom: 32px;
     }
 
+    /* 폼 한 줄 */
     .form-row {
       margin-bottom: 14px;
     }
-    .form-row-inline {
-      display: grid;
-      gap: 10px;
-    }
-    @media (min-width: 720px) {
-      .form-row-inline {
-        grid-template-columns: repeat(2, minmax(0,1fr));
-      }
-    }
-
     label {
       display: block;
       font-size: 13px;
       margin-bottom: 4px;
     }
-    label span.required {
-      color: #ff8ea0;
-      font-size: 12px;
-      margin-left: 3px;
-    }
-    .sub-label {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-top: 2px;
-    }
-
     input, select, textarea {
       width: 100%;
       padding: 9px 11px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.22);
-      background: var(--bg-card);
-      color: var(--text-main);
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
       font-size: 13px;
       outline: none;
     }
-    input::placeholder,
-    textarea::placeholder {
-      color: rgba(255,255,255,0.45);
-    }
     input:focus, select:focus, textarea:focus {
-      border-color: var(--brand-primary-soft);
-      box-shadow: 0 0 0 1px rgba(123,165,255,0.55);
+      border-color: #ff7aa2;
+      box-shadow: 0 0 0 1px rgba(255,122,162,0.5);
     }
     textarea {
-      min-height: 80px;
+      min-height: 70px;
       resize: vertical;
     }
 
-    input[type="file"] {
-      padding: 7px 8px;
-      font-size: 12px;
-    }
-
+    /* 버튼 */
     .submit-btn {
-      margin-top: 10px;
+      margin-top: 8px;
       padding: 11px 22px;
       border-radius: 999px;
       border: none;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-soft));
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
       color: #111;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
-    }
-    .submit-btn:hover {
-      filter: brightness(1.03);
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.6);
-    }
-    .submit-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     }
 
     .hint {
-      font-size: 11px;
+      font-size: 12px;
       color: rgba(255,255,255,0.7);
       margin-top: 8px;
     }
 
-    .side-card {
-      border-radius: 18px;
-      border: 1px solid var(--border-soft);
-      padding: 16px 16px 14px;
-      background: linear-gradient(
-        135deg,
-        rgba(58,108,243,0.25),
-        rgba(7,8,11,0.98)
-      );
-    }
-    .side-title {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .side-body {
-      font-size: 12px;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
-    .side-list {
-      font-size: 11px;
-      opacity: 0.9;
-      padding-left: 16px;
-      margin: 0;
-    }
-
     footer {
-      margin-top: 28px;
+      margin-top: 40px;
       padding-top: 14px;
-      border-top: 1px solid var(--border-soft);
+      border-top: 1px solid rgba(255,255,255,0.12);
       font-size: 11px;
-      color: rgba(255,255,255,0.68);
+      color: rgba(255,255,255,0.65);
       display: flex;
       justify-content: space-between;
       gap: 8px;
       flex-wrap: wrap;
     }
+
+    /* 홈 섹션 (디렉터/스태프 버튼) */
+    .home-section {
+      margin-top: 40px;
+    }
+    .home-section h2 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .home-section p {
+      opacity: 0.8;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .home-link-btn {
+      display:inline-block;
+      padding:12px 20px;
+      border-radius:10px;
+      background:linear-gradient(135deg,#3A6CF3,#7BA5FF);
+      color:#07080b;
+      font-weight:600;
+      font-size:14px;
+      text-decoration:none;
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- 헤더 -->
+    <!-- ⭐ 헤더 영역 -->
     <header>
-      <div class="logo-mark">
-        <div class="logo-dot"></div>
-        <div class="logo">FIDUCIA · AI STILLCUT</div>
-      </div>
-      <div class="tagline">프로젝트별 스틸컷 · 장비 · 일정 설계 베타</div>
+      <div class="logo">FIDUCIA · AI STILLCUT</div>
+      <div class="tagline">스틸컷 · 장비 · 일정 추천</div>
     </header>
 
-    <!-- 메인 -->
+    <!-- ⭐ 메인 영역 -->
     <main>
-      <!-- 왼쪽: 소개 -->
-      <section>
-        <h1>프로젝트에 가장 어울리는 스틸컷을<br>AI가 먼저 스케치합니다.</h1>
-        <p class="lead">
-          아래 정보를 입력하면, 프로젝트 성격에 맞는
-          <b>스틸컷 후보 · 샷 타입 · 카메라 무브 · 기술 메모</b>를
-          AI가 한 번에 설계해줍니다.<br>
-          이후 실제 촬영 플랜을 짤 때 레퍼런스 보드처럼 활용할 수 있습니다.
-        </p>
+      <h1>프로젝트에 가장 어울리는 스틸컷 · 장비 · 일정을 AI가 제안합니다.</h1>
 
-        <div class="chip-row">
-          <div class="chip">브랜딩</div>
-          <div class="chip">웨딩</div>
-          <div class="chip">뮤직비디오</div>
-          <div class="chip">행사 / 유튜브</div>
-          <div class="chip">1인 운영 · 소규모 크루</div>
-        </div>
+      <p class="lead">
+        아래 정보를 입력해주시면,
+        프로젝트 성격에 맞는 스틸컷 후보, 장비 구성, 촬영·편집 일정을
+        AI가 자동으로 분석해 추천합니다.
+      </p>
+      <p class="lead">
+        브랜딩 · 웨딩 · 뮤직비디오 · 행사 등 다양한 콘텐츠 유형을 지원합니다.
+      </p>
 
-        <section class="card">
-          <form action="/.netlify/functions/stillcut" method="POST">
-            <!-- 파일 업로드 -->
-            <div class="form-row">
-              <label for="media_file">
-                레퍼런스 영상 / 스틸 업로드 <span class="required">*</span>
-              </label>
-              <input
-                id="media_file"
-                name="media_file"
-                type="file"
-                accept="video/*,image/*"
-                multiple
-              />
-              <div class="sub-label">
-                최대 여러 개까지 업로드 가능 · 실제 파일 분석은 추후 버전에서 지원 예정입니다.
-              </div>
-            </div>
+      <!-- ⭐ 카드 + 폼 -->
+      <section class="card">
+        <!-- 지금은 action="#" : 아무 데도 안 보냄 (Netlify 함수 연결 예정) -->
+        <form action="/.netlify/functions/stillcut" method="POST">
+          <!-- 1) 영상 / 이미지 파일 업로드 -->
+          <div class="form-row">
+            <label for="media_file">영상 / 사진 파일 업로드</label>
+            <input
+              id="media_file"
+              name="media_file"
+              type="file"
+              accept="video/*,image/*"
+              multiple
+            />
+          </div>
 
-            <!-- 영상 링크 -->
-            <div class="form-row">
-              <label for="video_url">
-                영상 링크 (선택)
-              </label>
-              <input
-                id="video_url"
-                name="video_url"
-                type="url"
-                placeholder="예: https://youtube.com/..., vimeo, 드라이브 링크 등"
-              />
-            </div>
+          <!-- 2) (선택) 영상 링크 -->
+          <div class="form-row">
+            <label for="video_url">영상 링크 (선택)</label>
+            <input
+              id="video_url"
+              name="video_url"
+              type="url"
+              placeholder="예: https://youtube.com/..."
+            />
+          </div>
 
-            <!-- 영상 종류 / 길이 -->
-            <div class="form-row form-row-inline">
-              <div>
-                <label for="video_type">
-                  영상 종류 <span class="required">*</span>
-                </label>
-                <select id="video_type" name="video_type">
-                  <option value="브랜딩">브랜딩</option>
-                  <option value="웨딩">웨딩</option>
-                  <option value="뮤직비디오">뮤직비디오</option>
-                  <option value="행사">행사</option>
-                  <option value="유튜브">유튜브</option>
-                  <option value="기타">기타</option>
-                </select>
-              </div>
-              <div>
-                <label for="project_length">
-                  완성 영상 길이
-                </label>
-                <select id="project_length" name="project_length">
-                  <option value="30초">30초</option>
-                  <option value="1분">1분</option>
-                  <option value="2~3분">2~3분</option>
-                  <option value="5분 이상">5분 이상</option>
-                </select>
-              </div>
-            </div>
+          <!-- 3) 영상 종류 -->
+          <div class="form-row">
+            <label for="video_type">영상 종류</label>
+            <select id="video_type" name="video_type">
+              <option value="브랜딩">브랜딩</option>
+              <option value="웨딩">웨딩</option>
+              <option value="뮤직비디오">뮤직비디오</option>
+              <option value="행사">행사</option>
+              <option value="유튜브">유튜브</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
 
-            <!-- 무드 / 로케이션 -->
-            <div class="form-row form-row-inline">
-              <div>
-                <label for="mood">
-                  원하는 무드 / 톤
-                </label>
-                <input
-                  id="mood"
-                  name="mood"
-                  type="text"
-                  placeholder="예: 시네마틱, 따뜻한, 감성적인, 다큐 느낌 등"
-                />
-              </div>
-              <div>
-                <label for="location_type">
-                  로케이션
-                </label>
-                <input
-                  id="location_type"
-                  name="location_type"
-                  type="text"
-                  placeholder="예: 카페 실내, 야외 공원, 예식장, 스튜디오 등"
-                />
-              </div>
-            </div>
+          <!-- 4) 원하는 무드 / 톤 -->
+          <div class="form-row">
+            <label for="mood">원하는 무드 / 톤</label>
+            <input
+              id="mood"
+              name="mood"
+              type="text"
+              placeholder="예: 시네마틱, 따뜻한, 감성적인 톤"
+            />
+          </div>
 
-            <!-- 예산 / 크루 규모 -->
-            <div class="form-row form-row-inline">
-              <div>
-                <label for="budget_level">
-                  예산 범위
-                </label>
-                <select id="budget_level" name="budget_level">
-                  <option value="50만원~100만원 이하">50~100만원 이하</option>
-                  <option value="100만원~200만원">100~200만원</option>
-                  <option value="200만원~300만원">200~300만원</option>
-                  <option value="300만원 이상">300만원 이상</option>
-                </select>
-              </div>
-              <div>
-                <label for="crew_preference">
-                  선호 크루 규모
-                </label>
-                <select id="crew_preference" name="crew_preference">
-                  <option value="1인 운영">1인 운영</option>
-                  <option value="2~3인 소규모">2~3인 소규모</option>
-                  <option value="4인 이상">4인 이상</option>
-                </select>
-              </div>
-            </div>
+          <!-- 5) 완성 영상 길이 -->
+          <div class="form-row">
+            <label for="project_length">완성 영상 길이</label>
+            <select id="project_length" name="project_length">
+              <option value="30초">30초</option>
+              <option value="1분">1분</option>
+              <option value="2~3분">2~3분</option>
+              <option value="5분 이상">5분 이상</option>
+            </select>
+          </div>
 
-            <!-- 마감 시점 -->
-            <div class="form-row">
-              <label for="deadline">
-                마감 / 납품 희망 시점
-              </label>
-              <input
-                id="deadline"
-                name="deadline"
-                type="text"
-                placeholder="예: 2주 이내, 1개월 이내, 유동적 등"
-              />
-            </div>
+          <!-- 6) 로케이션 종류 -->
+          <div class="form-row">
+            <label for="location_type">로케이션 종류</label>
+            <input
+              id="location_type"
+              name="location_type"
+              type="text"
+              placeholder="예: 카페 실내, 야외 공원, 예식장, 스튜디오 등"
+            />
+          </div>
 
-            <!-- 추가 메모 -->
-            <div class="form-row">
-              <label for="extra_notes">
-                추가로 꼭 고려했으면 하는 부분
-              </label>
-              <textarea
-                id="extra_notes"
-                name="extra_notes"
-                placeholder="예: 신부 감정 많이 / 브랜드 로고가 썸네일에 잘 보였으면 좋겠어요 / 인물보다 공간을 더 강조하고 싶어요 등"
-              ></textarea>
-            </div>
+          <!-- 7) 예산 범위 -->
+          <div class="form-row">
+            <label for="budget_level">예산 범위</label>
+            <select id="budget_level" name="budget_level">
+              <option value="50만원~100만원 이하">50~100만원 이하</option>
+              <option value="100만원~200만원">100~200만원</option>
+              <option value="200만원~300만원">200~300만원</option>
+              <option value="300만원 이상">300만원 이상</option>
+            </select>
+          </div>
 
-            <button type="submit" class="submit-btn">
-              AI 스틸컷 설계 요청하기
-            </button>
+          <!-- 8) 선호 크루 규모 -->
+          <div class="form-row">
+            <label for="crew_preference">선호 크루 규모</label>
+            <select id="crew_preference" name="crew_preference">
+              <option value="1인 운영">1인 운영</option>
+              <option value="2~3인 소규모">2~3인 소규모</option>
+              <option value="4인 이상">4인 이상</option>
+            </select>
+          </div>
 
-            <p class="hint">
-              제출 후, 입력 정보를 바탕으로 한
-              <b>스틸컷 후보 리스트와 요약 메모</b>가 새로운 페이지에서 생성됩니다.
-              (현재는 베타 버전으로, 일부 로직은 테스트용 규칙 기반으로 작동합니다.)
-            </p>
-          </form>
-        </section>
+          <!-- 9) 마감 / 납품 희망 시점 -->
+          <div class="form-row">
+            <label for="deadline">마감 / 납품 희망 시점</label>
+            <input
+              id="deadline"
+              name="deadline"
+              type="text"
+              placeholder="예: 2주 이내, 1개월 이내, 유동적"
+            />
+          </div>
+
+          <!-- 10) 추가 메모 -->
+          <div class="form-row">
+            <label for="extra_notes">추가로 꼭 고려했으면 하는 부분</label>
+            <textarea
+              id="extra_notes"
+              name="extra_notes"
+              placeholder="예: 신부 감정 많이 / 브랜드 로고가 썸네일에 잘 보였으면 좋겠어요 / 인물보다 공간을 더 강조하고 싶어요 등"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="submit-btn">Ai 스틸컷 설계 요청 (연습용)</button>
+
+          <p class="hint">
+            지금은 버튼을 누르면 Netlify 함수(stillcut)를 통해 결과 페이지가 열립니다.<br>
+            이후 OpenAI / 이미지 API와 연동해 실제 AI 설계를 강화할 예정입니다.
+          </p>
+        </form>
       </section>
 
-      <!-- 오른쪽: 설명/가이드 -->
-      <aside>
-        <div class="side-card">
-          <div class="side-title">이 페이지에서 하는 일</div>
-          <div class="side-body">
-            클라이언트나 본인이 생각하는 프로젝트 정보를 먼저 정리한 뒤,
-            AI에게 <b>“어떤 샷이 필요할지”</b>를 한 번 제안받는 단계입니다.
-            실제 촬영 전에 샷리스트 스케치용으로 사용하면 좋습니다.
-          </div>
-          <ul class="side-list">
-            <li>영상 종류·무드·로케이션 기준으로 기본 구조 설계</li>
-            <li>웨딩 / 브랜딩 / 뮤비 각각 다른 패턴으로 추천</li>
-            <li>예산·크루 규모를 고려해 현실적인 컷 구성 지향</li>
-          </ul>
-        </div>
+      <!-- 🔹 FIDUCIA DIRECTORS 섹션 -->
+      <section class="home-section">
+        <h2>FIDUCIA DIRECTORS</h2>
+        <p>
+          연출 · 촬영 · 조명 · 편집 · 미술 · 음향 디렉터 라인업을 한 곳에서 확인할 수 있습니다.<br>
+          AI 스틸컷 결과를 바탕으로, 프로젝트에 어울리는 디렉터를 바로 찾아보세요.
+        </p>
 
-        <div style="height: 10px;"></div>
+        <a href="/directors.html" class="home-link-btn">
+          → 디렉터 라인업 보기
+        </a>
+      </section>
 
-        <div class="side-card" style="background:rgba(7,8,11,0.96);">
-          <div class="side-title">향후 업데이트 예정</div>
-          <div class="side-body">
-            전역 후에는 이 입력값을 바탕으로
-            <b>실제 스틸컷 이미지 생성, 장비 패키지 추천, 일정 산출</b>까지
-            확장할 수 있도록 설계 중입니다.
-          </div>
-          <ul class="side-list">
-            <li>대표 스틸컷 이미지 자동 생성</li>
-            <li>보유 장비 기반 촬영 셋업 추천</li>
-            <li>촬영/편집 일정 자동 블럭 추천</li>
-          </ul>
-        </div>
-      </aside>
+      <!-- 🔹 STAFF / CREW 섹션 -->
+      <section class="home-section">
+        <h2>STAFF · CREW</h2>
+        <p>
+          퍼스트 · 세컨 · 서드 · 막내 등, 현장을 함께 채워갈 스태프/크루를 모으는 공간입니다.<br>
+          부원 · 막내 · 성장하고 싶은 크리에이터들이 모이는 커뮤니티로 확장될 예정입니다.
+        </p>
+
+        <a href="/staff.html" class="home-link-btn">
+          → STAFF / CREW 라인업 보기
+        </a>
+      </section>
+
     </main>
 
-    <!-- 푸터 -->
+    <!-- ⭐ 푸터 -->
     <footer>
-      <div>© 2025 FIDUCIA COLLECTIVE · AI Stillcut Beta</div>
-      <div>문의 채널: 전역 후 인스타 / 이메일로 연결 예정</div>
+      <div>© 2025 FIDUCIA COLLECTIVE · Ai Stillcut</div>
+      <div>문의: (나중에 이메일/인스타로 교체)</div>
     </footer>
   </div>
 </body>
