@@ -1,102 +1,261 @@
-// netlify/functions/staff.js
-// Notion에서 Type=staff인 사람들만 읽어서 JSON으로 반환
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>FIDUCIA STAFF · 크루 라인업</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #07080b;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY;
-const NOTION_STAFF_DB_ID = process.env.NOTION_STAFF_DB_ID;
-const NOTION_VERSION = "2022-06-28";
-
-exports.handler = async (event) => {
-  // GET 요청만 허용
-  if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ error: "GET만 지원합니다." })
-    };
-  }
-
-  // 환경변수 체크
-  if (!NOTION_API_KEY || !NOTION_STAFF_DB_ID) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ error: "Notion 환경변수가 설정되어 있지 않습니다." })
-    };
-  }
-
-  try {
-    // Notion DB에서 Type=staff + Published=true 인 것만 가져오기
-    const res = await fetch(
-      `https://api.notion.com/v1/databases/${NOTION_STAFF_DB_ID}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${NOTION_API_KEY}`,
-          "Notion-Version": NOTION_VERSION,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          filter: {
-            and: [
-              { property: "Published", checkbox: { equals: true } },
-              { property: "Type", select: { equals: "staff" } }
-            ]
-          }
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Notion API 오류 (staff):", res.status, text);
-      return {
-        statusCode: 500,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({
-          error: "Notion API 요청 실패 (staff)",
-          detail: text
-        })
-      };
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
     }
 
-    const data = await res.json();
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
+    }
+    .logo {
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .tagline {
+      font-size: 12px;
+      opacity: 0.8;
+    }
 
-    const items = (data.results || []).map((page) => {
-      const props = page.properties || {};
+    h1 {
+      font-size: 26px;
+      margin: 20px 0 8px;
+    }
+    .lead {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 20px;
+    }
 
-      const getTitle = (p) => p?.title?.[0]?.plain_text || "";
-      const getRichText = (p) =>
-        p?.rich_text?.map((r) => r.plain_text).join(" ") || "";
-      const getSelect = (p) => p?.select?.name || "";
-      const getMultiSelect = (p) =>
-        (p?.multi_select || []).map((o) => o.name);
+    .role-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .role-tab {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 12px;
+      cursor: pointer;
+      background: transparent;
+      color: #f5f5f5;
+      opacity: 0.75;
+    }
+    .role-tab.active {
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      color: #07080b;
+      opacity: 1;
+      border-color: transparent;
+    }
 
-      return {
-        id: page.id,
-        name: getTitle(props.Name),          // 이름
-        type: "staff",
-        roles: getMultiSelect(props.Roles),  // 촬영 / 조명 등 파트
-        level: getSelect(props.Level),       // 퍼스트 / 세컨 / 서드 / 막내
-        bio: getRichText(props.Bio),         // 자기소개
-        available_days: getRichText(props.AvailableDays), // 가능 요일
-        tags: getMultiSelect(props.Tags)     // 태그들
-      };
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .name-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .level-pill {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.85;
+    }
+    .roles {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .bio {
+      margin-top: 4px;
+      font-size: 13px;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .tag {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.9;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 28px;
+      font-size: 13px;
+      opacity: 0.85;
+      color: #7BA5FF;
+    }
+    .status {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">FIDUCIA · STAFF</div>
+    <div class="tagline">퍼스트 · 세컨 · 서드 · 막내 크루 라인업</div>
+  </header>
+
+  <main>
+    <h1>FIDUCIA STAFF / CREW</h1>
+    <p class="lead">
+      함께 성장할 크루/스태프들의 라인업입니다.<br>
+      퍼스트 · 세컨 · 서드 · 막내 등 원하는 포지션의 인원을 찾아보세요.
+    </p>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-level="all">전체</button>
+      <button class="role-tab" data-level="퍼스트">퍼스트</button>
+      <button class="role-tab" data-level="세컨">세컨</button>
+      <button class="role-tab" data-level="서드">서드</button>
+      <button class="role-tab" data-level="막내">막내</button>
+    </div>
+
+    <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
+    <div id="staff-grid" class="grid"></div>
+
+    <a href="/" class="back-link">← AI 스틸컷 서비스로 돌아가기</a>
+  </main>
+</div>
+
+<script>
+  const gridEl = document.getElementById("staff-grid");
+  const statusEl = document.getElementById("status");
+  const tabEls = document.querySelectorAll(".role-tab");
+
+  let allStaff = [];
+
+  function renderStaff(filterLevel = "all") {
+    gridEl.innerHTML = "";
+
+    const filtered = allStaff.filter(p => {
+      if (filterLevel === "all") return true;
+      return (p.level || "") === filterLevel;
     });
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ items })
-    };
-  } catch (err) {
-    console.error("staff 함수 처리 오류:", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        error: "서버 내부 오류 (staff)",
-        detail: String(err)
-      })
-    };
+    if (filtered.length === 0) {
+      gridEl.innerHTML = `
+        <p style="font-size:13px; opacity:0.8;">
+          아직 이 포지션에 등록된 스태프가 없습니다.
+        </p>`;
+      return;
+    }
+
+    for (const p of filtered) {
+      const tagsHtml = (p.tags || [])
+        .map(t => `<span class="tag">${t}</span>`).join("");
+
+      const rolesText = (p.roles || []).join(" · ");
+
+      const cardHtml = `
+        <article class="card">
+          <div class="name-line">
+            <div class="name">${p.name || "이름 미입력"}</div>
+            <div class="level-pill">${p.level || ""}</div>
+          </div>
+          ${rolesText ? `<div class="roles">파트 · ${rolesText}</div>` : ""}
+          ${
+            p.available_days
+              ? `<div class="meta">가능 요일 · ${p.available_days}</div>`
+              : ``
+          }
+          <div class="bio">${p.bio || ""}</div>
+          <div class="tags">${tagsHtml}</div>
+        </article>`;
+      gridEl.insertAdjacentHTML("beforeend", cardHtml);
+    }
   }
-};
+
+  async function loadStaff() {
+    try {
+      statusEl.textContent = "노션에서 데이터를 불러오는 중입니다...";
+      const res = await fetch("/.netlify/functions/staff");
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("staff 함수 응답 오류:", txt);
+        statusEl.textContent = "스태프 정보를 불러오는 중 오류가 발생했습니다.";
+        return;
+      }
+      const json = await res.json();
+      allStaff = json.items || [];
+      statusEl.textContent = "";
+      renderStaff("all");
+    } catch (e) {
+      console.error("loadStaff 오류:", e);
+      statusEl.textContent = "스태프 정보를 불러오는 중 오류가 발생했습니다.";
+    }
+  }
+
+  tabEls.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabEls.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const level = tab.dataset.level;
+      renderStaff(level);
+    });
+  });
+
+  loadStaff();
+</script>
+
+</body>
+</html>
