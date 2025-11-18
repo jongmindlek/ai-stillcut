@@ -128,23 +128,6 @@
       padding: 2px 8px;
       opacity: 0.9;
     }
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-      font-size: 12px;
-    }
-    .link-btn {
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.3);
-      font-size: 12px;
-      opacity: 0.9;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
     .back-link {
       display: inline-block;
       margin-top: 28px;
@@ -159,22 +142,23 @@
 <div class="wrapper">
   <header>
     <div class="logo">FIDUCIA · STAFF</div>
-    <div class="tagline">막내 · 세컨 · 스윙 · 크루 라인업</div>
+    <div class="tagline">퍼스트 · 세컨 · 서드 · 막내 크루 라인업</div>
   </header>
 
   <main>
     <h1>FIDUCIA STAFF / CREW</h1>
     <p class="lead">
       함께 성장할 크루/스태프들의 라인업입니다.<br>
-      막내 · 세컨 · 스윙 · 촬영보조 · 조명보조 등 원하는 파트의 인원을 찾아보세요.
+      퍼스트 · 세컨 · 서드 · 막내 등 원하는 포지션의 인원을 찾아보세요.
     </p>
 
+    <!-- 퍼스트/세컨/서드/막내 탭 -->
     <div class="role-tabs">
       <button class="role-tab active" data-role="all">전체</button>
-      <button class="role-tab" data-role="촬영보조">촬영보조</button>
-      <button class="role-tab" data-role="조명보조">조명보조</button>
-      <button class="role-tab" data-role="스윙">스윙</button>
-      <button class="role-tab" data-role="러너">러너</button>
+      <button class="role-tab" data-role="퍼스트">퍼스트</button>
+      <button class="role-tab" data-role="세컨">세컨</button>
+      <button class="role-tab" data-role="서드">서드</button>
+      <button class="role-tab" data-role="막내">막내</button>
     </div>
 
     <div id="staff-grid" class="grid"></div>
@@ -184,29 +168,39 @@
 </div>
 
 <script>
-  // staff 전용 데이터 
+  // STAFF 예시 데이터 (나중에 노션/DB로 대체 예정)
   const people = [
     {
       name: "김막내",
       type: "staff",
-      roles: ["촬영보조"],
-      main_gear: "기본 카메라·렌즈 운용 가능",
-      style_tags: ["성실", "운전 가능", "빠른 러닝"],
-      level: "Assistant",
-      portfolio_url: "",
-      schedule_url: "",
-      instagram: ""
+      roles: ["막내"],
+      main_gear: "기본 카메라·렌즈 운용 보조, 장비 운반",
+      style_tags: ["성실", "운전 가능", "피지컬 좋음"],
+      level: "막내"
     },
     {
-      name: "박스윙",
+      name: "이서드",
       type: "staff",
-      roles: ["스윙"],
-      main_gear: "조명·촬영 서포트 모두 가능",
-      style_tags: ["적극적", "멀티태스킹", "장비 이해도 높음"],
-      level: "Swing Crew",
-      portfolio_url: "",
-      schedule_url: "",
-      instagram: ""
+      roles: ["서드"],
+      main_gear: "촬영/조명 포지션 이동, 슬레이트, 세팅 보조",
+      style_tags: ["빠른 러닝", "현장 센스", "멀티 포지션"],
+      level: "서드"
+    },
+    {
+      name: "박세컨",
+      type: "staff",
+      roles: ["세컨"],
+      main_gear: "포커스 풀링, 서브 카메라 운영, 모니터링",
+      style_tags: ["집중력", "포커스 감각", "장비 이해도"],
+      level: "세컨"
+    },
+    {
+      name: "최퍼스트",
+      type: "staff",
+      roles: ["퍼스트"],
+      main_gear: "메인 카메라 서포트, 촬영/조명 팀 리딩",
+      style_tags: ["리더십", "세팅 총괄", "경험 풍부"],
+      level: "퍼스트"
     }
   ];
 
@@ -225,7 +219,7 @@
     if (filtered.length === 0) {
       gridEl.innerHTML = `
         <p style="font-size:13px; opacity:0.8;">
-          아직 이 파트에 등록된 스태프가 없습니다.
+          아직 이 포지션에 등록된 스태프가 없습니다.
         </p>`;
       return;
     }
