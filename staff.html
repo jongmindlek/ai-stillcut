@@ -2,276 +2,277 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA STAFF · 크루 라인업</title>
+  <title>FIDUCIA STAFF / CREW</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #07080b;
+      background: #050608;
       color: #f5f5f5;
-      line-height: 1.6;
     }
     a { color: inherit; text-decoration: none; }
 
     .wrapper {
-      max-width: 1100px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 24px 16px 64px;
+      padding: 20px 16px 80px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      margin-bottom: 24px;
+      padding: 10px 0 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
     }
     .logo {
       font-size: 14px;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       font-weight: 700;
     }
-    .tagline {
-      font-size: 12px;
-      opacity: 0.8;
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+    nav a {
+      opacity: 0.7;
+    }
+    nav a.active {
+      opacity: 1;
+      font-weight: 600;
     }
 
     h1 {
       font-size: 26px;
-      margin: 20px 0 8px;
+      margin: 24px 0 8px;
     }
     .lead {
       font-size: 14px;
       color: rgba(255,255,255,0.8);
       margin-bottom: 20px;
+      line-height: 1.6;
     }
 
-    .role-tabs {
+    .filter-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 18px;
     }
-    .role-tab {
-      padding: 6px 12px;
+    .chip {
+      padding: 7px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      font-size: 13px;
       cursor: pointer;
-      background: transparent;
-      color: #f5f5f5;
-      opacity: 0.75;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.07), transparent 55%);
+      opacity: 0.7;
     }
-    .role-tab.active {
-      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
-      color: #07080b;
+    .chip.active {
+      border-color: #3A6CF3;
       opacity: 1;
-      border-color: transparent;
+      box-shadow: 0 0 0 1px rgba(58,108,243,0.5);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    .cards {
+      display: flex;
+      flex-direction: column;
       gap: 16px;
     }
     .card {
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.16);
-      padding: 16px 14px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+        radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(0,0,0,0.85), transparent 55%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .card-row {
       font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 4px;
     }
-
-    .name-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .name {
-      font-size: 16px;
+    .card-row strong {
       font-weight: 600;
     }
-    .level-pill {
-      font-size: 11px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 2px 8px;
-      opacity: 0.85;
-    }
-    .roles {
-      font-size: 12px;
-      opacity: 0.85;
-    }
-    .meta {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-    .bio {
-      margin-top: 4px;
-      font-size: 13px;
-    }
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .tag {
-      font-size: 11px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 2px 8px;
-      opacity: 0.9;
-    }
-    .back-link {
+    .tag-pill {
       display: inline-block;
-      margin-top: 28px;
-      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      font-size: 12px;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+    .badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       opacity: 0.85;
-      color: #7BA5FF;
     }
-    .status {
-      font-size: 12px;
-      opacity: 0.8;
-      margin-bottom: 10px;
+
+    .empty-msg,
+    .error-msg {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 8px;
     }
-    nav {
-      font-size: 12px;
-      display: flex;
-      gap: 10px;
-      opacity: 0.8;
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      margin-top: 26px;
+      color: rgba(173,205,255,0.9);
     }
-    nav a {
-      color: rgba(255,255,255,0.8);
+
+    @media (max-width: 600px) {
+      h1 { font-size: 22px; }
+      .card { padding: 16px 14px; }
     }
   </style>
 </head>
-
 <body>
 <div class="wrapper">
   <header>
-    <div>
-      <div class="logo">FIDUCIA · STAFF</div>
-      <nav>
-        <a href="/">AI 스틸컷</a> ·
-        <a href="/directors.html">DIRECTORS</a> ·
-        <strong>STAFF</strong>
-      </nav>
-    </div>
-    <div class="tagline">퍼스트 · 세컨 · 서드 · 막내 크루 라인업</div>
+    <div class="logo">FIDUCIA · STAFF</div>
+    <nav>
+      <a href="index.html">AI 스틸컷</a>
+      <a href="directors.html">DIRECTORS</a>
+      <a href="staff.html" class="active">STAFF</a>
+    </nav>
   </header>
 
   <main>
     <h1>FIDUCIA STAFF / CREW</h1>
     <p class="lead">
-      함께 성장할 크루/스태프들의 라인업입니다.<br>
-      퍼스트 · 세컨 · 서드 · 막내 등 원하는 포지션의 인원을 찾아보세요.
+      함께 성장할 크루/스태프들의 라인업입니다. 퍼스트 · 세컨 · 서드 · 막내 등
+      원하는 포지션의 크루를 찾을 때 참고용으로 사용하세요.
     </p>
 
-    <div class="role-tabs">
-      <button class="role-tab active" data-level="all">전체</button>
-      <button class="role-tab" data-level="퍼스트">퍼스트</button>
-      <button class="role-tab" data-level="세컨">세컨</button>
-      <button class="role-tab" data-level="서드">서드</button>
-      <button class="role-tab" data-level="막내">막내</button>
+    <!-- 레벨 필터 -->
+    <div class="filter-row" id="levelFilter">
+      <button class="chip active" data-level="all">전체</button>
+      <button class="chip" data-level="1st">퍼스트</button>
+      <button class="chip" data-level="2nd">세컨</button>
+      <button class="chip" data-level="3rd">서드</button>
+      <button class="chip" data-level="막내">막내</button>
     </div>
 
-    <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
-    <div id="staff-grid" class="grid"></div>
+    <div class="cards" id="staffCards"></div>
+    <p class="empty-msg" id="emptyMsg" style="display:none;">
+      아직 등록된 스태프 정보가 없습니다.
+    </p>
+    <p class="error-msg" id="errorMsg" style="display:none;">
+      스태프 정보를 불러오는 중 오류가 발생했습니다.
+    </p>
 
-    <a href="/" class="back-link">← AI 스틸컷 서비스로 돌아가기</a>
+    <a href="index.html" class="back-link">
+      ← AI 스틸컷 서비스로 돌아가기
+    </a>
   </main>
 </div>
 
 <script>
-  const gridEl = document.getElementById("staff-grid");
-  const statusEl = document.getElementById("status");
-  const tabEls = document.querySelectorAll(".role-tab");
+  const staffCardsEl = document.getElementById("staffCards");
+  const emptyMsgEl = document.getElementById("emptyMsg");
+  const errorMsgEl = document.getElementById("errorMsg");
+  const levelFilterEl = document.getElementById("levelFilter");
 
   let allStaff = [];
-
-  function renderStaff(filterLevel = "all") {
-    gridEl.innerHTML = "";
-
-    const filtered = allStaff.filter(p => {
-      if (filterLevel === "all") return true;
-      return (p.level || "") === filterLevel;
-    });
-
-    if (filtered.length === 0) {
-      gridEl.innerHTML = `
-        <p style="font-size:13px; opacity:0.8;">
-          아직 이 포지션에 등록된 스태프가 없습니다.
-        </p>`;
-      return;
-    }
-
-    for (const p of filtered) {
-      const tagsHtml = (p.tags || [])
-        .map(t => `<span class="tag">${t}</span>`).join("");
-
-      const rolesText = (p.roles || []).join(" · ");
-
-      const cardHtml = `
-        <article class="card">
-          <div class="name-line">
-            <div class="name">${p.name || "이름 미입력"}</div>
-            <div class="level-pill">${p.level || ""}</div>
-          </div>
-          ${rolesText ? `<div class="roles">파트 · ${rolesText}</div>` : ""}
-          ${
-            p.available_days
-              ? `<div class="meta">가능 요일 · ${p.available_days}</div>`
-              : ``
-          }
-          <div class="bio">${p.bio || ""}</div>
-          <div class="tags">${tagsHtml}</div>
-        </article>`;
-      gridEl.insertAdjacentHTML("beforeend", cardHtml);
-    }
-  }
+  let currentLevel = "all";
 
   async function loadStaff() {
     try {
-      statusEl.textContent = "노션에서 데이터를 불러오는 중입니다...";
       const res = await fetch("/.netlify/functions/staff");
       if (!res.ok) {
-        const txt = await res.text();
-        console.error("staff 함수 응답 오류:", txt);
-        statusEl.textContent = "스태프 정보를 불러오는 중 오류가 발생했습니다.";
+        console.error("staff 함수 응답 오류:", res.status);
+        errorMsgEl.style.display = "block";
         return;
       }
-      const json = await res.json();
-      allStaff = json.items || [];
-      statusEl.textContent = "";
-      renderStaff("all");
-    } catch (e) {
-      console.error("loadStaff 오류:", e);
-      statusEl.textContent = "스태프 정보를 불러오는 중 오류가 발생했습니다.";
+      const data = await res.json();
+      allStaff = data.items || [];
+      renderStaff();
+    } catch (err) {
+      console.error("staff 불러오기 실패:", err);
+      errorMsgEl.style.display = "block";
     }
   }
 
-  tabEls.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabEls.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const level = tab.dataset.level;
-      renderStaff(level);
+  function renderStaff() {
+    staffCardsEl.innerHTML = "";
+
+    const filtered = allStaff.filter(item => {
+      if (currentLevel === "all") return true;
+      const lvl = (item.level || "").trim();
+      return lvl === currentLevel;
     });
+
+    if (filtered.length === 0) {
+      emptyMsgEl.style.display = "block";
+      return;
+    } else {
+      emptyMsgEl.style.display = "none";
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const roles = (item.roles || []).join(" · ");
+      const tags = item.tags || [];
+
+      card.innerHTML = `
+        <div class="card-title">${item.name || "이름 미입력"}</div>
+        <div class="card-row"><strong>파트 ·</strong> ${roles || "미입력"}</div>
+        <div class="card-row"><strong>레벨 ·</strong> ${item.level || "미입력"}</div>
+        <div class="card-row"><strong>주 장비 ·</strong> ${item.main_gear || "미입력"}</div>
+        <div class="card-row"><strong>가능 요일 ·</strong> ${item.available_days || "협의 가능"}</div>
+        ${tags.length
+          ? `<div class="card-row">${tags
+              .map(t => `<span class="tag-pill">${t}</span>`)
+              .join("")}</div>`
+          : ""
+        }
+        <div class="badge">staff</div>
+      `;
+
+      staffCardsEl.appendChild(card);
+    });
+  }
+
+  levelFilterEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip");
+    if (!btn) return;
+
+    levelFilterEl.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+
+    currentLevel = btn.dataset.level;
+    renderStaff();
   });
 
   loadStaff();
 </script>
-
 </body>
 </html>
