@@ -1,103 +1,248 @@
-// netlify/functions/directors.js
-// Notion에서 Type=director 인 사람들만 읽어서 JSON으로 반환
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>FIDUCIA DIRECTORS · 감독 라인업</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #07080b;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY;
-const NOTION_DB_ID = process.env.NOTION_STAFF_DB_ID; // FIDUCIA PEOPLE DB 재사용
-const NOTION_VERSION = "2022-06-28";
-
-exports.handler = async (event) => {
-  // GET만 허용
-  if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ error: "GET만 지원합니다." })
-    };
-  }
-
-  if (!NOTION_API_KEY || !NOTION_DB_ID) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ error: "Notion 환경변수가 설정되어 있지 않습니다." })
-    };
-  }
-
-  try {
-    // Notion DB에서 Published=true + Type=director 인 페이지만 가져오기
-    const res = await fetch(
-      `https://api.notion.com/v1/databases/${NOTION_DB_ID}/query`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${NOTION_API_KEY}`,
-          "Notion-Version": NOTION_VERSION,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          filter: {
-            and: [
-              { property: "Published", checkbox: { equals: true } },
-              { property: "Type", select: { equals: "director" } }
-            ]
-          }
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Notion API 오류 (directors):", res.status, text);
-      return {
-        statusCode: 500,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({
-          error: "Notion API 요청 실패 (directors)",
-          detail: text
-        })
-      };
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
     }
 
-    const data = await res.json();
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
+    }
+    .logo {
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .tagline {
+      font-size: 12px;
+      opacity: 0.8;
+    }
 
-    const items = (data.results || []).map((page) => {
-      const props = page.properties || {};
+    nav {
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      opacity: 0.8;
+    }
+    nav a {
+      color: rgba(255,255,255,0.8);
+    }
 
-      const getTitle = (p) => p?.title?.[0]?.plain_text || "";
-      const getRichText = (p) =>
-        p?.rich_text?.map((r) => r.plain_text).join(" ") || "";
-      const getSelect = (p) => p?.select?.name || "";
-      const getMultiSelect = (p) =>
-        (p?.multi_select || []).map((o) => o.name);
-      const getUrl = (p) => p?.url || "";
+    h1 {
+      font-size: 26px;
+      margin: 20px 0 8px;
+    }
+    .lead {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 20px;
+    }
 
-      return {
-        id: page.id,
-        name: getTitle(props.Name),                  // 이름
-        roles: getMultiSelect(props.Roles),          // 연출 / 촬영 / 조명 / 편집 등 파트
-        level: getSelect(props.Level),               // Director / DOP 등 직책
-        main_gear: getRichText(props.MainGear),      // 주 장비
-        tags: getMultiSelect(props.Tags),            // 태그
-        portfolio_url: getUrl(props.PortfolioUrl),   // 포트폴리오 링크
-        schedule_url: getUrl(props.ScheduleUrl),     // 스케줄 링크
-        instagram: getUrl(props.Instagram)           // 인스타
-      };
-    });
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ items })
-    };
-  } catch (err) {
-    console.error("directors 함수 처리 오류:", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        error: "서버 내부 오류 (directors)",
-        detail: String(err)
-      })
-    };
+    .name-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .level-pill {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.85;
+    }
+    .roles {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .tag {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.9;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+    }
+    .link-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(123,165,255,0.8);
+      padding: 2px 10px;
+      color: #7BA5FF;
+    }
+    .status {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 28px;
+      font-size: 13px;
+      opacity: 0.85;
+      color: #7BA5FF;
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrapper">
+  <header>
+    <div>
+      <div class="logo">FIDUCIA · DIRECTORS</div>
+      <nav>
+        <a href="/">AI 스틸컷</a> ·
+        <strong>DIRECTORS</strong> ·
+        <a href="/staff.html">STAFF</a>
+      </nav>
+    </div>
+    <div class="tagline">연출 · 촬영 · 조명 감독 라인업</div>
+  </header>
+
+  <main>
+    <h1>FIDUCIA DIRECTORS</h1>
+    <p class="lead">
+      연출 / 촬영 / 조명 / 편집 등 각 파트의 감독·리더 포지션입니다.<br>
+      프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
+    </p>
+
+    <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
+    <div id="directors-grid" class="grid"></div>
+
+    <a href="/" class="back-link">← AI 스틸컷 서비스로 돌아가기</a>
+  </main>
+</div>
+
+<script>
+  const gridEl = document.getElementById("directors-grid");
+  const statusEl = document.getElementById("status");
+
+  let allDirectors = [];
+
+  function renderDirectors() {
+    gridEl.innerHTML = "";
+
+    if (!allDirectors.length) {
+      gridEl.innerHTML = `
+        <p style="font-size:13px; opacity:0.8;">
+          아직 등록된 감독 정보가 없습니다.
+        </p>`;
+      return;
+    }
+
+    for (const p of allDirectors) {
+      const rolesText = (p.roles || []).join(" · ");
+      const tagsHtml = (p.tags || [])
+        .map(t => `<span class="tag">${t}</span>`).join("");
+
+      const links = [];
+      if (p.portfolio_url) {
+        links.push(`<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`);
+      }
+      if (p.schedule_url) {
+        links.push(`<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`);
+      }
+      if (p.instagram) {
+        links.push(`<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`);
+      }
+
+      const cardHtml = `
+        <article class="card">
+          <div class="name-line">
+            <div class="name">${p.name || "이름 미입력"}</div>
+            <div class="level-pill">${p.level || ""}</div>
+          </div>
+          ${rolesText ? `<div class="roles">파트 · ${rolesText}</div>` : ""}
+          ${p.main_gear ? `<div class="meta">주 장비 · ${p.main_gear}</div>` : ""}
+          <div class="tags">${tagsHtml}</div>
+          <div class="links">${links.join("")}</div>
+        </article>
+      `;
+      gridEl.insertAdjacentHTML("beforeend", cardHtml);
+    }
   }
-};
+
+  async function loadDirectors() {
+    try {
+      statusEl.textContent = "노션에서 데이터를 불러오는 중입니다...";
+      const res = await fetch("/.netlify/functions/directors");
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("directors 함수 응답 오류:", txt);
+        statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
+        return;
+      }
+      const json = await res.json();
+      allDirectors = json.items || [];
+      statusEl.textContent = "";
+      renderDirectors();
+    } catch (e) {
+      console.error("loadDirectors 오류:", e);
+      statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
+    }
+  }
+
+  loadDirectors();
+</script>
+
+</body>
+</html>
