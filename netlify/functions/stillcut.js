@@ -1,6 +1,5 @@
-// netlify/functions/stillcut.js
 // 텍스트: OpenAI + 로컬 규칙 fallback
-// 이미지: gpt-image-1 사용, URL 방식 (response_format 제거)
+// 이미지: gpt-image-1 사용, URL 방식 (size=1536x1024)
 
 function escapeHtml(str = "") {
   return String(str)
@@ -14,7 +13,7 @@ function pickOne(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 로컬 요약 (fallback)
+// 🔹 로컬 요약 (fallback)
 function makeSummaryLocal(input) {
   const type = input.video_type || "프로젝트";
   const mood = input.mood || pickOne(["감성적인", "시네마틱한", "따뜻한", "도시적인"]);
@@ -31,7 +30,7 @@ function makeSummaryLocal(input) {
   return `${mood} 톤으로 ${len} 분량의 ${type}을(를) ${loc} ${pickOne(endings)}`;
 }
 
-// 로컬 샷리스트 (fallback)
+// 🔹 로컬 샷리스트 (fallback)
 function makeCutsLocal(input) {
   const type = input.video_type || "";
   const mood = input.mood || "감성적인";
@@ -174,7 +173,7 @@ function makeCutsLocal(input) {
   return cuts;
 }
 
-// OpenAI 텍스트 (요약 + 샷리스트)
+// 🔹 OpenAI 텍스트 (요약 + 샷리스트)
 async function makeWithOpenAI(input) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
@@ -253,7 +252,7 @@ async function makeWithOpenAI(input) {
   };
 }
 
-// OpenAI 이미지 (대표 스틸컷) – URL 사용
+// 🔹 OpenAI 이미지 (대표 스틸컷) – URL 사용
 async function makeImageWithOpenAI(input, summary) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY 미설정");
@@ -264,7 +263,7 @@ ${input.video_type || "영상"}의 대표 스틸컷.
 로케이션: ${input.location_type || "실내/야외 공간"}
 요약: ${summary || ""}
 
-영화 스틸컷 같은 시네마틱 사진, 고해상도, 사실적인 스타일, 16:9 비율, 섬세한 조명.
+영화 스틸컷 같은 시네마틱 사진, 고해상도, 사실적인 스타일, 16:9 느낌, 섬세한 조명.
   `.trim();
 
   const res = await fetch("https://api.openai.com/v1/images/generations", {
@@ -274,11 +273,12 @@ ${input.video_type || "영상"}의 대표 스틸컷.
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-  model: "gpt-image-1",
-  prompt,
-  size: "1536x1024",
-  n: 1
-}),
+      model: "gpt-image-1",
+      prompt,
+      size: "1536x1024",
+      n: 1
+    }),
+  });
 
   if (!res.ok) {
     const msg = await res.text();
