@@ -171,39 +171,40 @@
   // STAFF 예시 데이터 (나중에 노션/DB로 대체 예정)
   const people = [
     {
-      name: "김막내",
-      type: "staff",
-      roles: ["막내"],
-      main_gear: "기본 카메라·렌즈 운용 보조, 장비 운반",
-      style_tags: ["성실", "운전 가능", "피지컬 좋음"],
-      level: "막내"
-    },
-    {
-      name: "이서드",
-      type: "staff",
-      roles: ["서드"],
-      main_gear: "촬영/조명 포지션 이동, 슬레이트, 세팅 보조",
-      style_tags: ["빠른 러닝", "현장 센스", "멀티 포지션"],
-      level: "서드"
-    },
-    {
-      name: "박세컨",
-      type: "staff",
-      roles: ["세컨"],
-      main_gear: "포커스 풀링, 서브 카메라 운영, 모니터링",
-      style_tags: ["집중력", "포커스 감각", "장비 이해도"],
-      level: "세컨"
-    },
-    {
-      name: "최퍼스트",
-      type: "staff",
-      roles: ["퍼스트"],
-      main_gear: "메인 카메라 서포트, 촬영/조명 팀 리딩",
-      style_tags: ["리더십", "세팅 총괄", "경험 풍부"],
-      level: "퍼스트"
-    }
-  ];
-
+      const people = [
+  {
+    name: "김막내",
+    type: "staff",
+    roles: ["막내"],
+    bio: "성실하게 배우고 싶습니다. 장비 운반 및 기본 촬영 보조 가능합니다.",
+    style_tags: ["성실", "운전 가능", "피지컬 좋음"],
+    level: "막내"
+  },
+  {
+    name: "이서드",
+    type: "staff",
+    roles: ["서드"],
+    bio: "현장 센스 좋고 러닝 빠릅니다. 카메라/조명 서포트 모두 가능합니다.",
+    style_tags: ["빠른 러닝", "현장 센스", "멀티 포지션"],
+    level: "서드"
+  },
+  {
+    name: "박세컨",
+    type: "staff",
+    roles: ["세컨"],
+    bio: "포커스 풀링 및 모니터링 중심으로 서포트합니다.",
+    style_tags: ["집중력", "포커스 감각", "장비 이해도"],
+    level: "세컨"
+  },
+  {
+    name: "최퍼스트",
+    type: "staff",
+    roles: ["퍼스트"],
+    bio: "촬영팀 리딩 및 장비 세팅 총괄 경험이 있습니다.",
+    style_tags: ["리더십", "세팅 총괄", "경험 풍부"],
+    level: "퍼스트"
+  }
+];
   const gridEl = document.getElementById("staff-grid");
   const tabEls = document.querySelectorAll(".role-tab");
 
