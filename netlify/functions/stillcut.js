@@ -274,13 +274,11 @@ ${input.video_type || "영상"}의 대표 스틸컷.
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-image-1",
-      prompt,
-      size: "1024x576",
-      n: 1
-      // response_format 제거 → 기본 url 사용
-    }),
-  });
+  model: "gpt-image-1",
+  prompt,
+  size: "1536x1024",
+  n: 1
+}),
 
   if (!res.ok) {
     const msg = await res.text();
