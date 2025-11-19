@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Director Profile · FIDUCIA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #050608;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
+    }
+    .logo {
+      font-size: 14px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    nav {
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      opacity: 0.8;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 18px 0 6px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+    .section-body {
+      font-size: 14px;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 3px 9px;
+    }
+
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .link-pill {
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(123,165,255,0.8);
+      padding: 3px 10px;
+      color: #7BA5FF;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: rgba(173,205,255,0.9);
+      margin-top: 26px;
+    }
+
+    .status {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">FIDUCIA · DIRECTOR PROFILE</div>
+    <nav>
+      <a href="index.html">AI 스틸컷</a> ·
+      <a href="directors.html">DIRECTORS</a> ·
+      <a href="staff.html">STAFF</a>
+    </nav>
+  </header>
+
+  <main id="content">
+    <div id="loading" class="status">감독 정보를 불러오는 중입니다...</div>
+  </main>
+
+  <a href="javascript:history.back()" class="back-link">← 뒤로가기</a>
+</div>
+
+<script>
+  function getQueryId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
+
+  function renderDirector(d) {
+    const contentEl = document.getElementById("content");
+    const loadingEl = document.getElementById("loading");
+    if (loadingEl) loadingEl.remove();
+
+    if (!d) {
+      contentEl.innerHTML = `
+        <p class="status">
+          감독 정보를 찾을 수 없습니다. 링크가 잘못되었거나, 노션에서 비공개 처리되었을 수 있습니다.
+        </p>
+      `;
+      return;
+    }
+
+    const rolesText = (d.roles || []).join(" · ");
+    const tags = d.tags || [];
+
+    const links = [];
+    if (d.portfolio_url) {
+      links.push(
+        `<a class="link-pill" href="${d.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`
+      );
+    }
+    if (d.schedule_url) {
+      links.push(
+        `<a class="link-pill" href="${d.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`
+      );
+    }
+    if (d.instagram) {
+      links.push(
+        `<a class="link-pill" href="${d.instagram}" target="_blank" rel="noreferrer">Instagram</a>`
+      );
+    }
+
+    contentEl.innerHTML = `
+      <span class="badge">DIRECTOR</span>
+      <h1>${d.name || "이름 미입력"}</h1>
+      <div class="subtitle">
+        ${d.level ? d.level + " · " : ""}${rolesText || ""}
+      </div>
+
+      <section class="section">
+        <div class="section-title">INTRO / BIO</div>
+        <div class="section-body">
+          ${d.bio || "소개가 아직 작성되지 않았습니다."}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">MAIN GEAR</div>
+        <div class="section-body">
+          ${d.main_gear || "주 장비 정보가 아직 입력되지 않았습니다."}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">AVAILABLE DAYS</div>
+        <div class="section-body">
+          ${d.available_days || "일정은 협의 가능합니다."}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">TAGS</div>
+        <div class="section-body">
+          ${
+            tags.length
+              ? `<div class="pill-row">
+                  ${tags.map(t => `<span class="pill">${t}</span>`).join("")}
+                 </div>`
+              : "태그가 아직 없습니다."
+          }
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">LINKS</div>
+        <div class="section-body">
+          ${
+            links.length
+              ? `<div class="link-row">${links.join("")}</div>`
+              : "연결된 외부 링크가 없습니다."
+          }
+        </div>
+      </section>
+    `;
+  }
+
+  async function loadDirectorDetail() {
+    const id = getQueryId();
+    const loadingEl = document.getElementById("loading");
+
+    if (!id) {
+      if (loadingEl) {
+        loadingEl.textContent = "잘못된 접근입니다. id 파라미터가 없습니다.";
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch("/.netlify/functions/directors");
+      if (!res.ok) {
+        console.error("directors 함수 응답 오류:", await res.text());
+        if (loadingEl) {
+          loadingEl.textContent = "감독 정보를 불러오는 중 오류가 발생했습니다.";
+        }
+        return;
+      }
+      const json = await res.json();
+      const items = json.items || [];
+      const director = items.find((p) => p.id === id);
+      renderDirector(director);
+    } catch (err) {
+      console.error("loadDirectorDetail 오류:", err);
+      if (loadingEl) {
+        loadingEl.textContent = "감독 정보를 불러오는 중 오류가 발생했습니다.";
+      }
+    }
+  }
+
+  loadDirectorDetail();
+</script>
+</body>
+</html>
