@@ -60,7 +60,29 @@
     .lead {
       font-size: 14px;
       color: rgba(255,255,255,0.8);
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+    }
+
+    /* 검색창 */
+    .search-row {
+      margin-bottom: 10px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+    .search-input:focus {
+      border-color: #3A6CF3;
+      box-shadow: 0 0 0 1px rgba(58,108,243,0.4);
     }
 
     /* 필터 영역 */
@@ -218,6 +240,16 @@
       프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
     </p>
 
+    <!-- 검색 -->
+    <div class="search-row">
+      <input
+        id="search-input"
+        class="search-input"
+        type="text"
+        placeholder="이름, 파트, 주 장비, 태그로 검색해보세요."
+      />
+    </div>
+
     <!-- 필터 -->
     <div class="filter-row">
       <button class="filter-chip active" data-filter="all">전체</button>
@@ -234,6 +266,7 @@
 <script>
   const gridEl = document.getElementById("directors-grid");
   const statusEl = document.getElementById("status");
+  const searchInput = document.getElementById("search-input");
 
   const FILTER_ALL = "all";
   const FILTER_FAV = "fav";
@@ -241,6 +274,7 @@
 
   let allDirectors = [];
   let favoriteIds = [];
+  let searchTerm = "";
 
   const FAV_KEY = "fiducia_fav_directors_v1";
 
@@ -279,7 +313,7 @@
       favoriteIds.push(id);
     }
     saveFavorites();
-    renderDirectors(); // 다시 그림
+    renderDirectors();
   }
 
   function setFilter(filter) {
@@ -292,22 +326,40 @@
     renderDirectors();
   }
 
+  function setSearch(term) {
+    searchTerm = (term || "").toLowerCase();
+    renderDirectors();
+  }
+
   function renderDirectors() {
     gridEl.innerHTML = "";
 
     let list = allDirectors.slice();
+
+    // 즐겨찾기 필터
     if (currentFilter === FILTER_FAV) {
       list = list.filter(p => isFavorite(p.id));
     }
 
+    // 검색 필터
+    if (searchTerm) {
+      list = list.filter(p => {
+        const fields = [
+          p.name || "",
+          (p.roles || []).join(" "),
+          p.main_gear || "",
+          (p.tags || []).join(" ")
+        ].join(" ").toLowerCase();
+        return fields.includes(searchTerm);
+      });
+    }
+
     if (!list.length) {
-      gridEl.innerHTML = `
-        <p style="font-size:13px; opacity:0.8;">
-          ${currentFilter === FILTER_FAV
-            ? "즐겨찾기한 감독이 아직 없습니다."
-            : "아직 등록된 감독 정보가 없습니다."
-          }
-        </p>`;
+      const msg =
+        currentFilter === FILTER_FAV
+          ? "조건에 맞는 즐겨찾기 감독이 없습니다."
+          : "조건에 맞는 감독이 없습니다.";
+      gridEl.innerHTML = `<p style="font-size:13px; opacity:0.8;">${msg}</p>`;
       return;
     }
 
@@ -328,7 +380,6 @@
       }
 
       const detailUrl = "/director-detail.html?id=" + encodeURIComponent(p.id);
-
       const favActiveClass = isFavorite(p.id) ? "active" : "";
       const favSymbol = isFavorite(p.id) ? "★" : "☆";
 
@@ -361,7 +412,7 @@
     const buttons = document.querySelectorAll(".fav-btn");
     buttons.forEach(btn => {
       btn.onclick = (e) => {
-        e.stopPropagation(); // 카드 클릭과 분리
+        e.stopPropagation();
         const id = btn.getAttribute("data-id");
         toggleFavorite(id);
       };
@@ -398,6 +449,11 @@
       const f = chip.getAttribute("data-filter");
       setFilter(f);
     });
+  });
+
+  // 검색 이벤트
+  searchInput.addEventListener("input", (e) => {
+    setSearch(e.target.value);
   });
 </script>
 
