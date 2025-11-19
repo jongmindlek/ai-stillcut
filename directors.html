@@ -63,7 +63,6 @@
       margin-bottom: 12px;
     }
 
-    /* 검색창 */
     .search-row {
       margin-bottom: 10px;
     }
@@ -85,7 +84,6 @@
       box-shadow: 0 0 0 1px rgba(58,108,243,0.4);
     }
 
-    /* 필터 영역 */
     .filter-row {
       display: flex;
       flex-wrap: wrap;
@@ -127,15 +125,54 @@
       font-size: 13px;
     }
 
-    .name-line {
+    .top-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .profile-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+    .avatar-fallback {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .name-level {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
     .name {
       font-size: 16px;
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .level-pill {
       font-size: 11px;
@@ -143,17 +180,22 @@
       border: 1px solid rgba(255,255,255,0.25);
       padding: 2px 8px;
       opacity: 0.85;
+      display: inline-block;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* 즐겨찾기 버튼 */
     .fav-btn {
       border: none;
       background: transparent;
       cursor: pointer;
-      font-size: 17px;
+      font-size: 18px;
       line-height: 1;
       padding: 0 0 0 8px;
       color: rgba(255,255,255,0.5);
+      flex-shrink: 0;
     }
     .fav-btn.active {
       color: #ffd86b;
@@ -240,7 +282,6 @@
       프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
     </p>
 
-    <!-- 검색 -->
     <div class="search-row">
       <input
         id="search-input"
@@ -250,7 +291,6 @@
       />
     </div>
 
-    <!-- 필터 -->
     <div class="filter-row">
       <button class="filter-chip active" data-filter="all">전체</button>
       <button class="filter-chip" data-filter="fav">즐겨찾기만</button>
@@ -288,7 +328,6 @@
       const arr = JSON.parse(raw);
       favoriteIds = Array.isArray(arr) ? arr : [];
     } catch (e) {
-      console.warn("즐겨찾기 로드 오류:", e);
       favoriteIds = [];
     }
   }
@@ -296,9 +335,7 @@
   function saveFavorites() {
     try {
       localStorage.setItem(FAV_KEY, JSON.stringify(favoriteIds));
-    } catch (e) {
-      console.warn("즐겨찾기 저장 오류:", e);
-    }
+    } catch {}
   }
 
   function isFavorite(id) {
@@ -318,10 +355,8 @@
 
   function setFilter(filter) {
     currentFilter = filter;
-    const chips = document.querySelectorAll(".filter-chip");
-    chips.forEach(chip => {
-      const f = chip.getAttribute("data-filter");
-      chip.classList.toggle("active", f === filter);
+    document.querySelectorAll(".filter-chip").forEach(chip => {
+      chip.classList.toggle("active", chip.dataset.filter === filter);
     });
     renderDirectors();
   }
@@ -336,21 +371,20 @@
 
     let list = allDirectors.slice();
 
-    // 즐겨찾기 필터
     if (currentFilter === FILTER_FAV) {
       list = list.filter(p => isFavorite(p.id));
     }
 
-    // 검색 필터
     if (searchTerm) {
       list = list.filter(p => {
-        const fields = [
+        const text = [
           p.name || "",
           (p.roles || []).join(" "),
           p.main_gear || "",
-          (p.tags || []).join(" ")
+          (p.tags || []).join(" "),
+          p.bio || ""
         ].join(" ").toLowerCase();
-        return fields.includes(searchTerm);
+        return text.includes(searchTerm);
       });
     }
 
@@ -380,17 +414,24 @@
       }
 
       const detailUrl = "/director-detail.html?id=" + encodeURIComponent(p.id);
-      const favActiveClass = isFavorite(p.id) ? "active" : "";
-      const favSymbol = isFavorite(p.id) ? "★" : "☆";
+      const favActive = isFavorite(p.id);
+      const favSymbol = favActive ? "★" : "☆";
+
+      const avatarHtml = p.profile_image_url
+        ? `<img class="avatar" src="${p.profile_image_url}" alt="${p.name || ""}" />`
+        : `<div class="avatar-fallback">${(p.name || "?").charAt(0)}</div>`;
 
       const cardHtml = `
         <article class="card">
-          <div class="name-line">
-            <div>
-              <div class="name">${p.name || "이름 미입력"}</div>
-              ${p.level ? `<div class="level-pill">${p.level}</div>` : ""}
+          <div class="top-row">
+            <div class="profile-block">
+              ${avatarHtml}
+              <div class="name-level">
+                <div class="name">${p.name || "이름 미입력"}</div>
+                ${p.level ? `<span class="level-pill">${p.level}</span>` : ""}
+              </div>
             </div>
-            <button class="fav-btn ${favActiveClass}" data-id="${p.id}" aria-label="즐겨찾기">
+            <button class="fav-btn ${favActive ? "active" : ""}" data-id="${p.id}">
               ${favSymbol}
             </button>
           </div>
@@ -405,15 +446,10 @@
       gridEl.insertAdjacentHTML("beforeend", cardHtml);
     }
 
-    attachFavoriteHandlers();
-  }
-
-  function attachFavoriteHandlers() {
-    const buttons = document.querySelectorAll(".fav-btn");
-    buttons.forEach(btn => {
+    document.querySelectorAll(".fav-btn").forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
-        const id = btn.getAttribute("data-id");
+        const id = btn.dataset.id;
         toggleFavorite(id);
       };
     });
@@ -424,8 +460,6 @@
       statusEl.textContent = "노션에서 데이터를 불러오는 중입니다...";
       const res = await fetch("/.netlify/functions/directors");
       if (!res.ok) {
-        const txt = await res.text();
-        console.error("directors 함수 응답 오류:", txt);
         statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
         return;
       }
@@ -434,27 +468,18 @@
       statusEl.textContent = "";
       renderDirectors();
     } catch (e) {
-      console.error("loadDirectors 오류:", e);
       statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
     }
   }
 
-  // 초기화
   loadFavorites();
   loadDirectors();
 
-  // 필터 버튼 이벤트
   document.querySelectorAll(".filter-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      const f = chip.getAttribute("data-filter");
-      setFilter(f);
-    });
+    chip.onclick = () => setFilter(chip.dataset.filter);
   });
 
-  // 검색 이벤트
-  searchInput.addEventListener("input", (e) => {
-    setSearch(e.target.value);
-  });
+  searchInput.oninput = (e) => setSearch(e.target.value);
 </script>
 
 </body>
