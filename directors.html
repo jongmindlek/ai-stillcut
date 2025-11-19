@@ -49,6 +49,9 @@
     nav a {
       color: rgba(255,255,255,0.8);
     }
+    nav strong {
+      font-weight: 700;
+    }
 
     h1 {
       font-size: 26px;
@@ -60,28 +63,28 @@
       margin-bottom: 16px;
     }
 
-    /* 검색 바 */
-    .search-row {
+    /* 필터 영역 */
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 18px;
-    }
-    .search-input {
-      width: 100%;
-      padding: 9px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(7,8,11,0.95);
-      color: #f5f5f5;
       font-size: 13px;
-      outline: none;
     }
-    .search-input:focus {
-      border-color: #3A6CF3;
-      box-shadow: 0 0 0 1px rgba(58,108,243,0.5);
+    .filter-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.22);
+      padding: 4px 10px;
+      background: transparent;
+      color: #f5f5f5;
+      cursor: pointer;
+      opacity: 0.82;
     }
-    .search-hint {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      margin-top: 4px;
+    .filter-chip.active {
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      color: #05060a;
+      border-color: transparent;
+      opacity: 1;
     }
 
     .grid {
@@ -100,13 +103,6 @@
       flex-direction: column;
       gap: 6px;
       font-size: 13px;
-      cursor: pointer;
-      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, border-color 0.08s ease-out;
-    }
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 28px rgba(0,0,0,0.45);
-      border-color: rgba(122,165,255,0.7);
     }
 
     .name-line {
@@ -126,6 +122,22 @@
       padding: 2px 8px;
       opacity: 0.85;
     }
+
+    /* 즐겨찾기 버튼 */
+    .fav-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1;
+      padding: 0 0 0 8px;
+      color: rgba(255,255,255,0.5);
+    }
+    .fav-btn.active {
+      color: #ffd86b;
+      text-shadow: 0 0 6px rgba(255,216,107,0.6);
+    }
+
     .roles {
       font-size: 12px;
       opacity: 0.85;
@@ -151,7 +163,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 4px;
+      margin-top: 6px;
       font-size: 12px;
     }
     .link-pill {
@@ -160,6 +172,16 @@
       padding: 2px 10px;
       color: #7BA5FF;
     }
+
+    .detail-link {
+      margin-top: 4px;
+      font-size: 12px;
+      opacity: 0.85;
+      color: rgba(255,255,255,0.85);
+      text-decoration: underline;
+      text-decoration-style: dotted;
+    }
+
     .status {
       font-size: 12px;
       opacity: 0.8;
@@ -196,18 +218,11 @@
       프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
     </p>
 
-    <!-- 🔍 검색 영역 -->
-    <section class="search-row">
-      <input
-        id="searchInput"
-        class="search-input"
-        type="text"
-        placeholder="이름, 파트(연출/촬영), 장비(FX3 등), 태그(브랜딩/웨딩 등)로 검색해보세요."
-      />
-      <div class="search-hint">
-        예) “웨딩”, “브랜딩”, “FX3”, “연출 촬영”
-      </div>
-    </section>
+    <!-- 필터 -->
+    <div class="filter-row">
+      <button class="filter-chip active" data-filter="all">전체</button>
+      <button class="filter-chip" data-filter="fav">즐겨찾기만</button>
+    </div>
 
     <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
     <div id="directors-grid" class="grid"></div>
@@ -219,42 +234,79 @@
 <script>
   const gridEl = document.getElementById("directors-grid");
   const statusEl = document.getElementById("status");
-  const searchInputEl = document.getElementById("searchInput");
+
+  const FILTER_ALL = "all";
+  const FILTER_FAV = "fav";
+  let currentFilter = FILTER_ALL;
 
   let allDirectors = [];
-  let currentKeyword = "";
+  let favoriteIds = [];
+
+  const FAV_KEY = "fiducia_fav_directors_v1";
+
+  function loadFavorites() {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      if (!raw) {
+        favoriteIds = [];
+        return;
+      }
+      const arr = JSON.parse(raw);
+      favoriteIds = Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      console.warn("즐겨찾기 로드 오류:", e);
+      favoriteIds = [];
+    }
+  }
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(favoriteIds));
+    } catch (e) {
+      console.warn("즐겨찾기 저장 오류:", e);
+    }
+  }
+
+  function isFavorite(id) {
+    return favoriteIds.includes(id);
+  }
+
+  function toggleFavorite(id) {
+    if (!id) return;
+    if (isFavorite(id)) {
+      favoriteIds = favoriteIds.filter(x => x !== id);
+    } else {
+      favoriteIds.push(id);
+    }
+    saveFavorites();
+    renderDirectors(); // 다시 그림
+  }
+
+  function setFilter(filter) {
+    currentFilter = filter;
+    const chips = document.querySelectorAll(".filter-chip");
+    chips.forEach(chip => {
+      const f = chip.getAttribute("data-filter");
+      chip.classList.toggle("active", f === filter);
+    });
+    renderDirectors();
+  }
 
   function renderDirectors() {
     gridEl.innerHTML = "";
 
-    if (!allDirectors.length) {
-      gridEl.innerHTML = `
-        <p style="font-size:13px; opacity:0.8;">
-          아직 등록된 감독 정보가 없습니다.
-        </p>`;
-      return;
-    }
-
-    const keyword = (currentKeyword || "").trim().toLowerCase();
-
-    let list = allDirectors;
-    if (keyword) {
-      list = allDirectors.filter((p) => {
-        const name = (p.name || "").toLowerCase();
-        const roles = (p.roles || []).join(" ").toLowerCase();
-        const tags = (p.tags || []).join(" ").toLowerCase();
-        const gear = (p.main_gear || "").toLowerCase();
-        const bio = (p.bio || "").toLowerCase();
-
-        const haystack = [name, roles, tags, gear, bio].join(" ");
-        return haystack.includes(keyword);
-      });
+    let list = allDirectors.slice();
+    if (currentFilter === FILTER_FAV) {
+      list = list.filter(p => isFavorite(p.id));
     }
 
     if (!list.length) {
       gridEl.innerHTML = `
         <p style="font-size:13px; opacity:0.8;">
-          검색 조건에 맞는 감독이 없습니다. 검색어를 줄여보거나 다른 키워드로 시도해 주세요.
+          ${currentFilter === FILTER_FAV
+            ? "즐겨찾기한 감독이 아직 없습니다."
+            : "아직 등록된 감독 정보가 없습니다."
+          }
         </p>`;
       return;
     }
@@ -262,40 +314,58 @@
     for (const p of list) {
       const rolesText = (p.roles || []).join(" · ");
       const tagsHtml = (p.tags || [])
-        .map((t) => `<span class="tag">${t}</span>`)
-        .join("");
+        .map(t => `<span class="tag">${t}</span>`).join("");
 
       const links = [];
       if (p.portfolio_url) {
-        links.push(
-          `<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`
-        );
+        links.push(`<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`);
       }
       if (p.schedule_url) {
-        links.push(
-          `<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`
-        );
+        links.push(`<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`);
       }
       if (p.instagram) {
-        links.push(
-          `<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`
-        );
+        links.push(`<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`);
       }
 
+      const detailUrl = "/director-detail.html?id=" + encodeURIComponent(p.id);
+
+      const favActiveClass = isFavorite(p.id) ? "active" : "";
+      const favSymbol = isFavorite(p.id) ? "★" : "☆";
+
       const cardHtml = `
-        <article class="card" data-id="${p.id}">
+        <article class="card">
           <div class="name-line">
-            <div class="name">${p.name || "이름 미입력"}</div>
-            <div class="level-pill">${p.level || ""}</div>
+            <div>
+              <div class="name">${p.name || "이름 미입력"}</div>
+              ${p.level ? `<div class="level-pill">${p.level}</div>` : ""}
+            </div>
+            <button class="fav-btn ${favActiveClass}" data-id="${p.id}" aria-label="즐겨찾기">
+              ${favSymbol}
+            </button>
           </div>
+
           ${rolesText ? `<div class="roles">파트 · ${rolesText}</div>` : ""}
           ${p.main_gear ? `<div class="meta">주 장비 · ${p.main_gear}</div>` : ""}
           <div class="tags">${tagsHtml}</div>
           <div class="links">${links.join("")}</div>
+          <a class="detail-link" href="${detailUrl}">감독 상세 보기 →</a>
         </article>
       `;
       gridEl.insertAdjacentHTML("beforeend", cardHtml);
     }
+
+    attachFavoriteHandlers();
+  }
+
+  function attachFavoriteHandlers() {
+    const buttons = document.querySelectorAll(".fav-btn");
+    buttons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation(); // 카드 클릭과 분리
+        const id = btn.getAttribute("data-id");
+        toggleFavorite(id);
+      };
+    });
   }
 
   async function loadDirectors() {
@@ -318,23 +388,17 @@
     }
   }
 
-  // 🔍 검색 입력 이벤트
-  searchInputEl.addEventListener("input", (e) => {
-    currentKeyword = e.target.value;
-    renderDirectors();
-  });
-
-  // 👆 카드 클릭 시 상세 페이지로 이동
-  gridEl.addEventListener("click", (e) => {
-    const card = e.target.closest(".card");
-    if (!card) return;
-    const id = card.dataset.id;
-    if (!id) return;
-    // id를 쿼리스트링으로 넘긴다
-    window.location.href = `/director-detail.html?id=${encodeURIComponent(id)}`;
-  });
-
+  // 초기화
+  loadFavorites();
   loadDirectors();
+
+  // 필터 버튼 이벤트
+  document.querySelectorAll(".filter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const f = chip.getAttribute("data-filter");
+      setFilter(f);
+    });
+  });
 </script>
 
 </body>
