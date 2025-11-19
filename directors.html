@@ -57,7 +57,31 @@
     .lead {
       font-size: 14px;
       color: rgba(255,255,255,0.8);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* 검색 바 */
+    .search-row {
+      margin-bottom: 18px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: #3A6CF3;
+      box-shadow: 0 0 0 1px rgba(58,108,243,0.5);
+    }
+    .search-hint {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 4px;
     }
 
     .grid {
@@ -76,6 +100,13 @@
       flex-direction: column;
       gap: 6px;
       font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, border-color 0.08s ease-out;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.45);
+      border-color: rgba(122,165,255,0.7);
     }
 
     .name-line {
@@ -165,6 +196,19 @@
       프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
     </p>
 
+    <!-- 🔍 검색 영역 -->
+    <section class="search-row">
+      <input
+        id="searchInput"
+        class="search-input"
+        type="text"
+        placeholder="이름, 파트(연출/촬영), 장비(FX3 등), 태그(브랜딩/웨딩 등)로 검색해보세요."
+      />
+      <div class="search-hint">
+        예) “웨딩”, “브랜딩”, “FX3”, “연출 촬영”
+      </div>
+    </section>
+
     <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
     <div id="directors-grid" class="grid"></div>
 
@@ -175,8 +219,10 @@
 <script>
   const gridEl = document.getElementById("directors-grid");
   const statusEl = document.getElementById("status");
+  const searchInputEl = document.getElementById("searchInput");
 
   let allDirectors = [];
+  let currentKeyword = "";
 
   function renderDirectors() {
     gridEl.innerHTML = "";
@@ -189,24 +235,55 @@
       return;
     }
 
-    for (const p of allDirectors) {
+    const keyword = (currentKeyword || "").trim().toLowerCase();
+
+    let list = allDirectors;
+    if (keyword) {
+      list = allDirectors.filter((p) => {
+        const name = (p.name || "").toLowerCase();
+        const roles = (p.roles || []).join(" ").toLowerCase();
+        const tags = (p.tags || []).join(" ").toLowerCase();
+        const gear = (p.main_gear || "").toLowerCase();
+        const bio = (p.bio || "").toLowerCase();
+
+        const haystack = [name, roles, tags, gear, bio].join(" ");
+        return haystack.includes(keyword);
+      });
+    }
+
+    if (!list.length) {
+      gridEl.innerHTML = `
+        <p style="font-size:13px; opacity:0.8;">
+          검색 조건에 맞는 감독이 없습니다. 검색어를 줄여보거나 다른 키워드로 시도해 주세요.
+        </p>`;
+      return;
+    }
+
+    for (const p of list) {
       const rolesText = (p.roles || []).join(" · ");
       const tagsHtml = (p.tags || [])
-        .map(t => `<span class="tag">${t}</span>`).join("");
+        .map((t) => `<span class="tag">${t}</span>`)
+        .join("");
 
       const links = [];
       if (p.portfolio_url) {
-        links.push(`<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`);
+        links.push(
+          `<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`
+        );
       }
       if (p.schedule_url) {
-        links.push(`<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`);
+        links.push(
+          `<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`
+        );
       }
       if (p.instagram) {
-        links.push(`<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`);
+        links.push(
+          `<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`
+        );
       }
 
       const cardHtml = `
-        <article class="card">
+        <article class="card" data-id="${p.id}">
           <div class="name-line">
             <div class="name">${p.name || "이름 미입력"}</div>
             <div class="level-pill">${p.level || ""}</div>
@@ -240,6 +317,22 @@
       statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
     }
   }
+
+  // 🔍 검색 입력 이벤트
+  searchInputEl.addEventListener("input", (e) => {
+    currentKeyword = e.target.value;
+    renderDirectors();
+  });
+
+  // 👆 카드 클릭 시 상세 페이지로 이동
+  gridEl.addEventListener("click", (e) => {
+    const card = e.target.closest(".card");
+    if (!card) return;
+    const id = card.dataset.id;
+    if (!id) return;
+    // id를 쿼리스트링으로 넘긴다
+    window.location.href = `/director-detail.html?id=${encodeURIComponent(id)}`;
+  });
 
   loadDirectors();
 </script>
