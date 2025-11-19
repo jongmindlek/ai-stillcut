@@ -121,8 +121,8 @@ exports.handler = async (event) => {
 
       // Status: 상태 (타입: status or select) – 신규 접수로 기본값 설정
       Status: {
-        status: { name: "신규 접수" }, // 만약 타입이 select면 select: { name: "신규 접수" } 로 바꿔도 됨
-      },
+  select: { name: "신규 접수" },
+},
     },
   };
 
