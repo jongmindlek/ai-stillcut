@@ -1,6 +1,5 @@
 // netlify/functions/directors.js
-// FIDUCLA People DB에서 Published = true 인 모든 사람을 읽어온 뒤,
-// 그중 Type = director 인 사람만 골라서 반환
+// FIDUCIA People DB에서 Published=true 인 사람들 중 Type=director 만 추려서 반환
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_DB_ID = process.env.NOTION_DB_ID;
@@ -26,7 +25,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1) Notion에서 Published=true 인 모든 사람 불러오기 (Type 가리지 않음)
+    // Published = true 전체 가져오기
     const res = await fetch(
       `https://api.notion.com/v1/databases/${NOTION_DB_ID}/query`,
       {
@@ -66,26 +65,30 @@ exports.handler = async (event) => {
     const getSelect = (p) => p?.select?.name || "";
     const getMultiSelect = (p) =>
       (p?.multi_select || []).map((o) => o.name);
+    const getUrl = (p) => p?.url || "";
 
-    // 2) 자바스크립트 쪽에서 Type = "director" 인 사람만 필터
     const items = (data.results || [])
       .filter((page) => {
         const props = page.properties || {};
-        const typeName = getSelect(props.Type); // Notion의 Type 컬럼
+        const typeName = getSelect(props.Type);
         return typeName === "director";
       })
       .map((page) => {
         const props = page.properties || {};
         return {
           id: page.id,
-          name: getTitle(props.Name),                 // 이름
-          type: getSelect(props.Type),                // director / staff 등
-          roles: getMultiSelect(props.Roles),         // 연출 / 촬영 / 조명 등
-          level: getSelect(props.Level),              // Director / 1st / 2nd ...
-          main_gear: getRichText(props.MainGear),     // 주 장비
-          bio: getRichText(props.Bio),                // 한 줄/두 줄 소개
-          available_days: getRichText(props.AvailableDays), // 가능한 요일
-          tags: getMultiSelect(props.Tags)            // 태그들
+          name: getTitle(props.Name),
+          type: getSelect(props.Type),
+          roles: getMultiSelect(props.Roles),
+          level: getSelect(props.Level),
+          main_gear: getRichText(props.MainGear),
+          bio: getRichText(props.Bio),
+          available_days: getRichText(props.AvailableDays),
+          tags: getMultiSelect(props.Tags),
+          profile_image_url: getUrl(props.ProfileImageURL),
+          portfolio_url: getUrl(props.PortfolioURL),
+          instagram: getUrl(props.Instagram),
+          schedule_url: getUrl(props.ScheduleURL)
         };
       });
 
