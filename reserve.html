@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>감독 예약 신청 · FIDUCIA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #07080b;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 26px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    p.lead {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 24px;
+    }
+    .form-wrap {
+      max-width: 420px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 14px;
+      font-size: 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      outline: none;
+    }
+    textarea {
+      resize: none;
+      height: 120px;
+    }
+    label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    button {
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      background: #5a7bff;
+      border: none;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:active { opacity: 0.8; }
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    a.back {
+      font-size: 13px;
+      color: #6d9bff;
+      display: inline-block;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>감독 예약 신청</h1>
+  <p class="lead">
+    프로젝트에 맞는 감독/촬영/조명 전문가를 연결해드립니다.<br>
+    아래 폼을 작성하시면 1~10분 내로 담당자에게 전달됩니다.
+  </p>
+
+  <div class="form-wrap">
+    <label>요청자 이름 *</label>
+    <input id="name" placeholder="이름" required />
+
+    <label>연락처 (카카오톡 ID 또는 전화번호) *</label>
+    <input id="contact" placeholder="예: fiducia_kakao 또는 010-0000-0000" required />
+
+    <label>프로젝트 종류 *</label>
+    <select id="projectType">
+      <option value="광고">광고</option>
+      <option value="웨딩영상">웨딩영상</option>
+      <option value="브랜딩필름">브랜딩 필름</option>
+      <option value="뮤직비디오">뮤직비디오</option>
+      <option value="단편영화">단편 영화</option>
+      <option value="유튜브 영상">유튜브 영상</option>
+    </select>
+
+    <label>예산 범위 *</label>
+    <select id="budget">
+      <option value="50만 미만">50만 미만</option>
+      <option value="50~100만">50~100만</option>
+      <option value="100~200만">100~200만</option>
+      <option value="200만 이상">200만 이상</option>
+    </select>
+
+    <label>희망 날짜</label>
+    <input id="date" type="date" />
+
+    <label>촬영/미팅 장소</label>
+    <input id="location" placeholder="예: 서울 전체 / 강남 / 성수 등" />
+
+    <label>상세 요청사항 *</label>
+    <textarea id="message" placeholder="프로젝트 설명, 원하는 스타일, 참고 링크 등"></textarea>
+
+    <button onclick="submitForm()">예약 신청하기</button>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <a href="/" class="back">← 메인으로 돌아가기</a>
+
+<script>
+async function submitForm() {
+  const statusEl = document.getElementById("status");
+  statusEl.textContent = "전송 중입니다...";
+
+  const data = {
+    name: document.getElementById("name").value.trim(),
+    contact: document.getElementById("contact").value.trim(),
+    projectType: document.getElementById("projectType").value,
+    budget: document.getElementById("budget").value,
+    preferredDate: document.getElementById("date").value || "",
+    location: document.getElementById("location").value.trim(),
+    message: document.getElementById("message").value.trim(),
+  };
+
+  if (!data.name || !data.contact || !data.message) {
+    statusEl.textContent = "필수 항목을 모두 입력해주세요.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/reserve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = "오류 발생: " + json.error;
+      return;
+    }
+
+    statusEl.textContent = "예약 요청이 접수되었습니다! (1~10분 내 확인)";
+  } catch (e) {
+    statusEl.textContent = "서버 오류가 발생했습니다.";
+  }
+}
+</script>
+
+</body>
+</html>
