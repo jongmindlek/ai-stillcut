@@ -2,165 +2,230 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>감독 예약 신청 · FIDUCIA</title>
+  <title>FIDUCIA · 감독/스태프 예약 문의</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #07080b;
-      color: #fff;
-      padding: 20px;
+      color: #f5f5f5;
+      line-height: 1.6;
     }
-    h1 {
-      font-size: 26px;
-      margin-bottom: 12px;
-      font-weight: 700;
+    .wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
     }
-    p.lead {
-      font-size: 14px;
-      opacity: 0.8;
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
       margin-bottom: 24px;
     }
-    .form-wrap {
-      max-width: 420px;
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    input, textarea, select {
-      width: 100%;
-      padding: 14px;
+    .logo {
       font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    nav {
+      font-size: 12px;
+      opacity: 0.8;
+      display: flex;
+      gap: 8px;
+    }
+    nav a { color: rgba(255,255,255,0.8); text-decoration: none; }
+    h1 { font-size: 24px; margin: 20px 0 8px; }
+    .lead {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 18px;
+    }
+
+    form {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.16), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 55%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 18px 16px 20px;
+      max-width: 640px;
+      font-size: 13px;
+    }
+    .row { margin-bottom: 12px; }
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.06);
-      color: #fff;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
+      font-size: 13px;
       outline: none;
     }
-    textarea {
-      resize: none;
-      height: 120px;
+    input:focus, select:focus, textarea:focus {
+      border-color: #7BA5FF;
+      box-shadow: 0 0 0 1px rgba(123,165,255,0.5);
     }
-    label {
-      font-size: 13px;
-      opacity: 0.9;
-    }
-    button {
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      background: #5a7bff;
+    textarea { min-height: 80px; resize: vertical; }
+
+    .submit-btn {
+      margin-top: 8px;
+      padding: 10px 20px;
+      border-radius: 999px;
       border: none;
-      color: white;
-      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      margin-top: 10px;
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      color: #111;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
     }
-    button:active { opacity: 0.8; }
     .status {
       margin-top: 10px;
-      font-size: 14px;
-      opacity: 0.85;
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
     }
-    a.back {
-      font-size: 13px;
-      color: #6d9bff;
+    .back-link {
       display: inline-block;
-      margin-top: 28px;
+      margin-top: 22px;
+      font-size: 13px;
+      color: #7BA5FF;
+      text-decoration: none;
     }
   </style>
 </head>
-
 <body>
-  <h1>감독 예약 신청</h1>
-  <p class="lead">
-    프로젝트에 맞는 감독/촬영/조명 전문가를 연결해드립니다.<br>
-    아래 폼을 작성하시면 1~10분 내로 담당자에게 전달됩니다.
-  </p>
+  <div class="wrapper">
+    <header>
+      <div class="logo">FIDUCIA · RESERVATION</div>
+      <nav>
+        <a href="/">AI 스틸컷</a> ·
+        <a href="/directors.html">DIRECTORS</a> ·
+        <a href="/staff.html">STAFF</a>
+      </nav>
+    </header>
 
-  <div class="form-wrap">
-    <label>요청자 이름 *</label>
-    <input id="name" placeholder="이름" required />
+    <main>
+      <h1>감독 / 스태프 예약 문의</h1>
+      <p class="lead">
+        촬영/연출/조명 등 원하는 포지션과 대략적인 예산, 날짜를 적어주시면<br>
+        내부에서 확인 후 카카오 채널을 통해 상세 상담을 도와드립니다.
+      </p>
 
-    <label>연락처 (카카오톡 ID 또는 전화번호) *</label>
-    <input id="contact" placeholder="예: fiducia_kakao 또는 010-0000-0000" required />
+      <form id="reserve-form">
+        <div class="row">
+          <label for="name">이름 *</label>
+          <input id="name" name="name" required />
+        </div>
 
-    <label>프로젝트 종류 *</label>
-    <select id="projectType">
-      <option value="광고">광고</option>
-      <option value="웨딩영상">웨딩영상</option>
-      <option value="브랜딩필름">브랜딩 필름</option>
-      <option value="뮤직비디오">뮤직비디오</option>
-      <option value="단편영화">단편 영화</option>
-      <option value="유튜브 영상">유튜브 영상</option>
-    </select>
+        <div class="row">
+          <label for="contact">연락처 (카카오ID, 전화, 이메일 등) *</label>
+          <input id="contact" name="contact" required />
+        </div>
 
-    <label>예산 범위 *</label>
-    <select id="budget">
-      <option value="50만 미만">50만 미만</option>
-      <option value="50~100만">50~100만</option>
-      <option value="100~200만">100~200만</option>
-      <option value="200만 이상">200만 이상</option>
-    </select>
+        <div class="row">
+          <label for="projectType">프로젝트 종류</label>
+          <select id="projectType" name="projectType">
+            <option value="">선택 안 함</option>
+            <option value="브랜딩 필름">브랜딩 필름</option>
+            <option value="웨딩">웨딩</option>
+            <option value="뮤직비디오">뮤직비디오</option>
+            <option value="행사 / 공연">행사 / 공연</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
 
-    <label>희망 날짜</label>
-    <input id="date" type="date" />
+        <div class="row">
+          <label for="budget">예산 범위</label>
+          <select id="budget" name="budget">
+            <option value="">선택 안 함</option>
+            <option value="50~100만원">50~100만원</option>
+            <option value="100~200만원">100~200만원</option>
+            <option value="200~300만원">200~300만원</option>
+            <option value="300만원 이상">300만원 이상</option>
+          </select>
+        </div>
 
-    <label>촬영/미팅 장소</label>
-    <input id="location" placeholder="예: 서울 전체 / 강남 / 성수 등" />
+        <div class="row">
+          <label for="preferredDate">희망 촬영 날짜</label>
+          <input id="preferredDate" name="preferredDate" type="date" />
+        </div>
 
-    <label>상세 요청사항 *</label>
-    <textarea id="message" placeholder="프로젝트 설명, 원하는 스타일, 참고 링크 등"></textarea>
+        <div class="row">
+          <label for="location">촬영 예상 장소</label>
+          <input id="location" name="location" placeholder="예: 서울 강남 스튜디오 / 야외 한강공원 등" />
+        </div>
 
-    <button onclick="submitForm()">예약 신청하기</button>
+        <div class="row">
+          <label for="message">촬영/제작 요청 내용 *</label>
+          <textarea id="message" name="message" required
+            placeholder="어떤 프로젝트인지, 원하는 톤/레퍼런스, 러닝타임 등을 자유롭게 적어주세요."></textarea>
+        </div>
 
-    <div id="status" class="status"></div>
+        <!-- ✅ 여기 이 버튼이 '예약 신청하기' 버튼 -->
+        <button type="submit" class="submit-btn">예약 신청하기</button>
+
+        <div id="reserve-status" class="status"></div>
+      </form>
+
+      <a href="/" class="back-link">← AI 스틸컷 메인으로 돌아가기</a>
+    </main>
   </div>
 
-  <a href="/" class="back">← 메인으로 돌아가기</a>
+  <script>
+    const form = document.getElementById("reserve-form");
+    const statusEl = document.getElementById("reserve-status");
 
-<script>
-async function submitForm() {
-  const statusEl = document.getElementById("status");
-  statusEl.textContent = "전송 중입니다...";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "예약 요청을 전송하는 중입니다...";
 
-  const data = {
-    name: document.getElementById("name").value.trim(),
-    contact: document.getElementById("contact").value.trim(),
-    projectType: document.getElementById("projectType").value,
-    budget: document.getElementById("budget").value,
-    preferredDate: document.getElementById("date").value || "",
-    location: document.getElementById("location").value.trim(),
-    message: document.getElementById("message").value.trim(),
-  };
+      const data = {
+        name: form.name.value.trim(),
+        contact: form.contact.value.trim(),
+        projectType: form.projectType.value || "",
+        budget: form.budget.value || "",
+        preferredDate: form.preferredDate.value || "",
+        location: form.location.value.trim(),
+        message: form.message.value.trim(),
+      };
 
-  if (!data.name || !data.contact || !data.message) {
-    statusEl.textContent = "필수 항목을 모두 입력해주세요.";
-    return;
-  }
+      try {
+        const res = await fetch("/.netlify/functions/reserve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
 
-  try {
-    const res = await fetch("/.netlify/functions/reserve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+        const text = await res.text();
+        let json;
+        try { json = JSON.parse(text); } catch { json = null; }
+
+        if (!res.ok || !json || !json.ok) {
+          console.error("reserve error:", text);
+          statusEl.textContent =
+            "예약 요청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+          return;
+        }
+
+        statusEl.textContent = "예약 요청이 접수되었습니다! (1~10분 내로 확인)";
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent =
+          "네트워크 오류로 예약 요청을 전송하지 못했습니다.";
+      }
     });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      statusEl.textContent = "오류 발생: " + json.error;
-      return;
-    }
-
-    statusEl.textContent = "예약 요청이 접수되었습니다! (1~10분 내 확인)";
-  } catch (e) {
-    statusEl.textContent = "서버 오류가 발생했습니다.";
-  }
-}
-</script>
-
+  </script>
 </body>
 </html>
