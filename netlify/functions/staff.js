@@ -1,6 +1,5 @@
 // netlify/functions/staff.js
-// FIDUCLA People DB에서 Published = true 인 사람 중
-// Type = staff 인 사람들만 골라서 반환
+// FIDUCIA People DB에서 Published=true 인 사람 중 Type=staff 만 반환
 
 const NOTION_API_KEY = process.env.NOTION_API_KEY;
 const NOTION_DB_ID = process.env.NOTION_DB_ID;
@@ -26,7 +25,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1) Published = true 인 모든 사람 가져오기
     const res = await fetch(
       `https://api.notion.com/v1/databases/${NOTION_DB_ID}/query`,
       {
@@ -66,8 +64,8 @@ exports.handler = async (event) => {
     const getSelect = (p) => p?.select?.name || "";
     const getMultiSelect = (p) =>
       (p?.multi_select || []).map((o) => o.name);
+    const getUrl = (p) => p?.url || "";
 
-    // 2) Type = "staff" 인 사람만 필터
     const items = (data.results || [])
       .filter((page) => {
         const props = page.properties || {};
@@ -78,14 +76,18 @@ exports.handler = async (event) => {
         const props = page.properties || {};
         return {
           id: page.id,
-          name: getTitle(props.Name),                 // 이름
-          type: getSelect(props.Type),                // staff
-          roles: getMultiSelect(props.Roles),         // 촬영, 조명 등
-          level: getSelect(props.Level),              // 퍼스트/세컨/서드/막내
-          main_gear: getRichText(props.MainGear),     // 주 장비
-          bio: getRichText(props.Bio),                // 소개
-          available_days: getRichText(props.AvailableDays), // 가능 요일
-          tags: getMultiSelect(props.Tags)            // 태그
+          name: getTitle(props.Name),
+          type: getSelect(props.Type),
+          roles: getMultiSelect(props.Roles),
+          level: getSelect(props.Level),
+          main_gear: getRichText(props.MainGear),
+          bio: getRichText(props.Bio),
+          available_days: getRichText(props.AvailableDays),
+          tags: getMultiSelect(props.Tags),
+          profile_image_url: getUrl(props.ProfileImageURL),
+          portfolio_url: getUrl(props.PortfolioURL),
+          instagram: getUrl(props.Instagram),
+          schedule_url: getUrl(props.ScheduleURL)
         };
       });
 
