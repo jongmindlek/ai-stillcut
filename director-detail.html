@@ -42,14 +42,44 @@
       opacity: 0.8;
     }
 
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+    .avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+    .avatar-fallback {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.6);
+      flex-shrink: 0;
+    }
+
     h1 {
       font-size: 26px;
-      margin: 18px 0 6px;
+      margin: 0 0 6px;
     }
     .subtitle {
       font-size: 13px;
       color: rgba(255,255,255,0.75);
-      margin-bottom: 18px;
+      margin-bottom: 4px;
     }
 
     .badge {
@@ -65,8 +95,8 @@
     }
 
     .section {
-      margin-bottom: 20px;
-      padding-bottom: 14px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .section-title {
@@ -180,11 +210,26 @@
       );
     }
 
+    const avatarHtml = d.profile_image_url
+      ? `<img class="avatar" src="${d.profile_image_url}" alt="${d.name || ""}" />`
+      : `<div class="avatar-fallback">${(d.name || "?").charAt(0)}</div>`;
+
     contentEl.innerHTML = `
-      <span class="badge">DIRECTOR</span>
-      <h1>${d.name || "이름 미입력"}</h1>
-      <div class="subtitle">
-        ${d.level ? d.level + " · " : ""}${rolesText || ""}
+      <div class="badge">DIRECTOR</div>
+
+      <div class="profile-header">
+        ${avatarHtml}
+        <div>
+          <h1>${d.name || "이름 미입력"}</h1>
+          <div class="subtitle">
+            ${d.level ? d.level + " · " : ""}${rolesText || ""}
+          </div>
+          ${
+            links.length
+              ? `<div class="link-row">${links.join("")}</div>`
+              : ""
+          }
+        </div>
       </div>
 
       <section class="section">
@@ -220,17 +265,6 @@
           }
         </div>
       </section>
-
-      <section class="section">
-        <div class="section-title">LINKS</div>
-        <div class="section-body">
-          ${
-            links.length
-              ? `<div class="link-row">${links.join("")}</div>`
-              : "연결된 외부 링크가 없습니다."
-          }
-        </div>
-      </section>
     `;
   }
 
@@ -248,7 +282,6 @@
     try {
       const res = await fetch("/.netlify/functions/directors");
       if (!res.ok) {
-        console.error("directors 함수 응답 오류:", await res.text());
         if (loadingEl) {
           loadingEl.textContent = "감독 정보를 불러오는 중 오류가 발생했습니다.";
         }
@@ -259,7 +292,6 @@
       const director = items.find((p) => p.id === id);
       renderDirector(director);
     } catch (err) {
-      console.error("loadDirectorDetail 오류:", err);
       if (loadingEl) {
         loadingEl.textContent = "감독 정보를 불러오는 중 오류가 발생했습니다.";
       }
