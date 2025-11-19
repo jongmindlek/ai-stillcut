@@ -2,277 +2,380 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA STAFF / CREW</title>
+  <title>FIDUCIA STAFF · 크루 라인업</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #050608;
+      background: #07080b;
       color: #f5f5f5;
+      line-height: 1.6;
     }
     a { color: inherit; text-decoration: none; }
 
     .wrapper {
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 20px 16px 80px;
+      padding: 24px 16px 64px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
     }
     .logo {
       font-size: 14px;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       font-weight: 700;
     }
+    .tagline {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
     nav {
+      font-size: 12px;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 13px;
+      gap: 10px;
+      opacity: 0.8;
     }
     nav a {
-      opacity: 0.7;
+      color: rgba(255,255,255,0.8);
     }
-    nav a.active {
-      opacity: 1;
-      font-weight: 600;
+    nav strong {
+      font-weight: 700;
     }
 
     h1 {
       font-size: 26px;
-      margin: 24px 0 8px;
+      margin: 20px 0 8px;
     }
     .lead {
       font-size: 14px;
       color: rgba(255,255,255,0.8);
-      margin-bottom: 20px;
-      line-height: 1.6;
+      margin-bottom: 12px;
     }
 
+    /* 검색창 */
+    .search-row {
+      margin-bottom: 10px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(7,8,11,0.95);
+      color: #f5f5f5;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+    .search-input:focus {
+      border-color: #3A6CF3;
+      box-shadow: 0 0 0 1px rgba(58,108,243,0.4);
+    }
+
+    /* 필터 */
     .filter-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 18px;
-    }
-    .chip {
-      padding: 7px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
       font-size: 13px;
-      cursor: pointer;
-      background: radial-gradient(circle at top left, rgba(255,255,255,0.07), transparent 55%);
-      opacity: 0.7;
     }
-    .chip.active {
-      border-color: #3A6CF3;
+    .filter-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.22);
+      padding: 4px 10px;
+      background: transparent;
+      color: #f5f5f5;
+      cursor: pointer;
+      opacity: 0.82;
+    }
+    .filter-chip.active {
+      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
+      color: #05060a;
+      border-color: transparent;
       opacity: 1;
-      box-shadow: 0 0 0 1px rgba(58,108,243,0.5);
     }
 
-    .cards {
-      display: flex;
-      flex-direction: column;
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
     }
     .card {
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(0,0,0,0.85), transparent 55%);
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 18px 16px 16px;
-      position: relative;
-      overflow: hidden;
-    }
-    .card-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .card-row {
+        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       font-size: 13px;
-      color: rgba(255,255,255,0.85);
-      margin-bottom: 4px;
     }
-    .card-row strong {
+
+    .name-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .name {
+      font-size: 16px;
       font-weight: 600;
     }
-    .tag-pill {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      font-size: 12px;
-      margin-right: 6px;
-      margin-top: 4px;
-    }
-    .badge {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      padding: 4px 10px;
+    .level-pill {
+      font-size: 11px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.25);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      padding: 2px 8px;
       opacity: 0.85;
     }
 
-    .empty-msg,
-    .error-msg {
-      font-size: 13px;
-      color: rgba(255,255,255,0.7);
-      margin-top: 8px;
+    /* 즐겨찾기 버튼 */
+    .fav-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1;
+      padding: 0 0 0 8px;
+      color: rgba(255,255,255,0.5);
+    }
+    .fav-btn.active {
+      color: #ffd86b;
+      text-shadow: 0 0 6px rgba(255,216,107,0.6);
     }
 
+    .roles {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .tag {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.9;
+    }
+
+    .status {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
     .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      display: inline-block;
+      margin-top: 28px;
       font-size: 13px;
-      margin-top: 26px;
-      color: rgba(173,205,255,0.9);
-    }
-
-    @media (max-width: 600px) {
-      h1 { font-size: 22px; }
-      .card { padding: 16px 14px; }
+      opacity: 0.85;
+      color: #7BA5FF;
     }
   </style>
 </head>
+
 <body>
 <div class="wrapper">
   <header>
-    <div class="logo">FIDUCIA · STAFF</div>
-    <nav>
-      <a href="index.html">AI 스틸컷</a>
-      <a href="directors.html">DIRECTORS</a>
-      <a href="staff.html" class="active">STAFF</a>
-    </nav>
+    <div>
+      <div class="logo">FIDUCIA · STAFF</div>
+      <nav>
+        <a href="/">AI 스틸컷</a> ·
+        <a href="/directors.html">DIRECTORS</a> ·
+        <strong>STAFF</strong>
+      </nav>
+    </div>
+    <div class="tagline">퍼스트 · 세컨 · 서드 · 막내 / 크루 라인업</div>
   </header>
 
   <main>
     <h1>FIDUCIA STAFF / CREW</h1>
     <p class="lead">
-      함께 성장할 크루/스태프들의 라인업입니다. 퍼스트 · 세컨 · 서드 · 막내 등
-      원하는 포지션의 크루를 찾을 때 참고용으로 사용하세요.
+      함께 성장할 크루/스태프들의 라인업입니다.<br>
+      퍼스트 · 세컨 · 서드 · 막내 등 원하는 포지션의 인원을 찾아보세요.
     </p>
 
-    <!-- 레벨 필터 -->
-    <div class="filter-row" id="levelFilter">
-      <button class="chip active" data-level="all">전체</button>
-      <button class="chip" data-level="1st">퍼스트</button>
-      <button class="chip" data-level="2nd">세컨</button>
-      <button class="chip" data-level="3rd">서드</button>
-      <button class="chip" data-level="막내">막내</button>
+    <!-- 검색 -->
+    <div class="search-row">
+      <input id="search-input" class="search-input" placeholder="이름, 포지션, 장비, 태그로 검색해보세요." />
     </div>
 
-    <div class="cards" id="staffCards"></div>
-    <p class="empty-msg" id="emptyMsg" style="display:none;">
-      아직 등록된 스태프 정보가 없습니다.
-    </p>
-    <p class="error-msg" id="errorMsg" style="display:none;">
-      스태프 정보를 불러오는 중 오류가 발생했습니다.
-    </p>
+    <!-- 필터 -->
+    <div class="filter-row">
+      <button class="filter-chip active" data-filter="all">전체</button>
+      <button class="filter-chip" data-filter="fav">즐겨찾기만</button>
+    </div>
 
-    <a href="index.html" class="back-link">
-      ← AI 스틸컷 서비스로 돌아가기
-    </a>
+    <div id="status" class="status">불러오는 중...</div>
+    <div id="staff-grid" class="grid"></div>
+
+    <a href="/" class="back-link">← AI 스틸컷 서비스로 돌아가기</a>
   </main>
 </div>
 
 <script>
-  const staffCardsEl = document.getElementById("staffCards");
-  const emptyMsgEl = document.getElementById("emptyMsg");
-  const errorMsgEl = document.getElementById("errorMsg");
-  const levelFilterEl = document.getElementById("levelFilter");
+  const gridEl = document.getElementById("staff-grid");
+  const statusEl = document.getElementById("status");
+  const searchInput = document.getElementById("search-input");
+
+  const FILTER_ALL = "all";
+  const FILTER_FAV = "fav";
+  let currentFilter = FILTER_ALL;
 
   let allStaff = [];
-  let currentLevel = "all";
+  let favoriteIds = [];
+  let searchTerm = "";
+
+  const FAV_KEY = "fiducia_fav_staff_v1";
+
+  function loadFavorites() {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      favoriteIds = raw ? JSON.parse(raw) : [];
+    } catch {
+      favoriteIds = [];
+    }
+  }
+
+  function saveFavorites() {
+    localStorage.setItem(FAV_KEY, JSON.stringify(favoriteIds));
+  }
+
+  function isFavorite(id) {
+    return favoriteIds.includes(id);
+  }
+
+  function toggleFavorite(id) {
+    if (isFavorite(id)) {
+      favoriteIds = favoriteIds.filter(x => x !== id);
+    } else {
+      favoriteIds.push(id);
+    }
+    saveFavorites();
+    renderStaff();
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll(".filter-chip").forEach(chip => {
+      chip.classList.toggle("active", chip.dataset.filter === f);
+    });
+    renderStaff();
+  }
+
+  function setSearch(term) {
+    searchTerm = term.toLowerCase();
+    renderStaff();
+  }
+
+  function renderStaff() {
+    gridEl.innerHTML = "";
+
+    let list = allStaff.slice();
+
+    if (currentFilter === FILTER_FAV) {
+      list = list.filter(p => isFavorite(p.id));
+    }
+
+    if (searchTerm) {
+      list = list.filter(p => {
+        const text = [
+          p.name || "",
+          p.roles?.join(" ") || "",
+          p.main_gear || "",
+          p.tags?.join(" ") || ""
+        ]
+          .join(" ")
+          .toLowerCase();
+        return text.includes(searchTerm);
+      });
+    }
+
+    if (!list.length) {
+      gridEl.innerHTML =
+        `<p style="font-size:13px; opacity:0.8;">조건에 맞는 스태프가 없습니다.</p>`;
+      return;
+    }
+
+    for (const p of list) {
+      const tagsHtml = (p.tags || [])
+        .map(t => `<span class="tag">${t}</span>`)
+        .join("");
+
+      const favClass = isFavorite(p.id) ? "active" : "";
+      const favSymbol = isFavorite(p.id) ? "★" : "☆";
+
+      const html = `
+        <article class="card">
+          <div class="name-line">
+            <div>
+              <div class="name">${p.name}</div>
+              <div class="level-pill">${(p.level || "")}</div>
+            </div>
+            <button class="fav-btn ${favClass}" data-id="${p.id}">${favSymbol}</button>
+          </div>
+
+          ${p.roles?.length ? `<div class="roles">포지션 · ${p.roles.join(" · ")}</div>` : ""}
+          ${p.main_gear ? `<div class="meta">주 장비 · ${p.main_gear}</div>` : ""}
+          ${p.bio ? `<div class="meta">${p.bio}</div>` : ""}
+          <div class="tags">${tagsHtml}</div>
+        </article>
+      `;
+      gridEl.insertAdjacentHTML("beforeend", html);
+    }
+
+    document.querySelectorAll(".fav-btn").forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        toggleFavorite(btn.dataset.id);
+      };
+    });
+  }
 
   async function loadStaff() {
     try {
       const res = await fetch("/.netlify/functions/staff");
-      if (!res.ok) {
-        console.error("staff 함수 응답 오류:", res.status);
-        errorMsgEl.style.display = "block";
-        return;
-      }
-      const data = await res.json();
-      allStaff = data.items || [];
+      const json = await res.json();
+      allStaff = json.items || [];
+      statusEl.textContent = "";
       renderStaff();
-    } catch (err) {
-      console.error("staff 불러오기 실패:", err);
-      errorMsgEl.style.display = "block";
+    } catch (e) {
+      statusEl.textContent = "스태프 정보를 불러오는데 실패했습니다.";
     }
   }
 
-  function renderStaff() {
-    staffCardsEl.innerHTML = "";
+  loadFavorites();
+  loadStaff();
 
-    const filtered = allStaff.filter(item => {
-      if (currentLevel === "all") return true;
-      const lvl = (item.level || "").trim();
-      return lvl === currentLevel;
-    });
-
-    if (filtered.length === 0) {
-      emptyMsgEl.style.display = "block";
-      return;
-    } else {
-      emptyMsgEl.style.display = "none";
-    }
-
-    filtered.forEach(item => {
-      const card = document.createElement("article");
-      card.className = "card";
-
-      const roles = (item.roles || []).join(" · ");
-      const tags = item.tags || [];
-
-      card.innerHTML = `
-        <div class="card-title">${item.name || "이름 미입력"}</div>
-        <div class="card-row"><strong>파트 ·</strong> ${roles || "미입력"}</div>
-        <div class="card-row"><strong>레벨 ·</strong> ${item.level || "미입력"}</div>
-        <div class="card-row"><strong>주 장비 ·</strong> ${item.main_gear || "미입력"}</div>
-        <div class="card-row"><strong>가능 요일 ·</strong> ${item.available_days || "협의 가능"}</div>
-        ${tags.length
-          ? `<div class="card-row">${tags
-              .map(t => `<span class="tag-pill">${t}</span>`)
-              .join("")}</div>`
-          : ""
-        }
-        <div class="badge">staff</div>
-      `;
-
-      staffCardsEl.appendChild(card);
-    });
-  }
-
-  levelFilterEl.addEventListener("click", (e) => {
-    const btn = e.target.closest(".chip");
-    if (!btn) return;
-
-    levelFilterEl.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-    btn.classList.add("active");
-
-    currentLevel = btn.dataset.level;
-    renderStaff();
+  document.querySelectorAll(".filter-chip").forEach(chip => {
+    chip.onclick = () => setFilter(chip.dataset.filter);
   });
 
-  loadStaff();
+  searchInput.oninput = e => setSearch(e.target.value);
 </script>
+
 </body>
 </html>
