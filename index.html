@@ -2,126 +2,247 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA · AI 스틸컷 예약</title>
+  <title>FIDUCIA · DIRECTORS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #07080b;
       color: #f5f5f5;
+      line-height: 1.6;
     }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      justify-content: center;
+    a { color: inherit; text-decoration: none; }
+
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 24px;
     }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 500px;
-      width: 100%;
+    .logo {
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 700;
     }
-    .form-container input, .form-container select, .form-container textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      background-color: #333;
-      color: #fff;
+    .tagline {
+      font-size: 12px;
+      opacity: 0.8;
     }
-    .form-container button {
-      background-color: #0078d4;
-      color: white;
-      padding: 12px;
-      border: none;
-      cursor: pointer;
-      width: 100%;
+
+    nav {
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      opacity: 0.8;
     }
-    .form-container button:hover {
-      background-color: #005b99;
+    nav a {
+      color: rgba(255,255,255,0.8);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 20px 0 8px;
+    }
+    .lead {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .name-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .level-pill {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.85;
+    }
+    .roles {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+    .meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .tag {
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      opacity: 0.9;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+    }
+    .link-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(123,165,255,0.8);
+      padding: 2px 10px;
+      color: #7BA5FF;
+    }
+    .status {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 28px;
+      font-size: 13px;
+      opacity: 0.85;
+      color: #7BA5FF;
     }
   </style>
 </head>
+
 <body>
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <h2>예약 신청</h2>
-      <form id="reservation-form">
-        <!-- 스틸컷 미리보기 정보 삽입 -->
-        <p>예약하신 스틸컷: <strong id="preview-info">스틸컷 정보가 여기에 표시됩니다.</strong></p>
-        <img id="preview-image" src="" alt="스틸컷 이미지" style="width: 100%;"/>
-
-        <label for="name">이름:</label>
-        <input type="text" id="name" name="name" required />
-
-        <label for="contact">연락처 (전화번호):</label>
-        <input type="text" id="contact" name="contact" required />
-
-        <label for="notes">메모:</label>
-        <textarea id="notes" name="notes"></textarea>
-
-        <button type="submit">예약 신청하기</button>
-      </form>
-      <p id="status"></p>
-      <button type="button" onclick="closeModal()">닫기</button>
+<div class="wrapper">
+  <header>
+    <div>
+      <div class="logo">FIDUCIA · DIRECTORS</div>
+      <nav>
+        <a href="/">AI 스틸컷</a> ·
+        <strong>DIRECTORS</strong> ·
+        <a href="/staff.html">STAFF</a>
+      </nav>
     </div>
-  </div>
+    <div class="tagline">연출 · 촬영 · 조명 감독 라인업</div>
+  </header>
 
-  <!-- 미리보기 이미지 및 예약 버튼 -->
-  <div id="preview">
-    <img id="preview-image" src="preview-image.jpg" alt="스틸컷 미리보기" />
-    <button id="open-reservation-form">예약하기</button>
-  </div>
+  <main>
+    <h1>FIDUCIA DIRECTORS</h1>
+    <p class="lead">
+      연출 / 촬영 / 조명 / 편집 등 각 파트의 감독·리더 포지션입니다.<br>
+      프로젝트 톤과 예산, 장비 스타일에 맞는 감독을 찾을 때 참고용으로 사용하세요.
+    </p>
 
-  <script>
-    // 미리보기 정보 및 예약 폼 처리
-    document.getElementById("open-reservation-form").addEventListener("click", function() {
-      const previewInfo = document.getElementById("preview-info");
-      previewInfo.textContent = "스틸컷 정보: 예시 스틸컷";  // 실제 스틸컷 정보로 교체
-      document.getElementById("preview-image").src = "preview-image.jpg"; // 실제 이미지 URL로 교체
-      modal.style.display = "flex";
-    });
+    <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
+    <div id="directors-grid" class="grid"></div>
 
-    // 모달 닫기
-    function closeModal() {
-      modal.style.display = "none";
+    <a href="/" class="back-link">← AI 스틸컷 서비스로 돌아가기</a>
+  </main>
+</div>
+
+<script>
+  const gridEl = document.getElementById("directors-grid");
+  const statusEl = document.getElementById("status");
+
+  let allDirectors = [];
+
+  function renderDirectors() {
+    gridEl.innerHTML = "";
+
+    if (!allDirectors.length) {
+      gridEl.innerHTML = `
+        <p style="font-size:13px; opacity:0.8;">
+          아직 등록된 감독 정보가 없습니다.
+        </p>`;
+      return;
     }
 
-    // 예약 폼 제출 시 처리
-    document.getElementById("reservation-form").addEventListener("submit", async function(event) {
-      event.preventDefault();
+    for (const p of allDirectors) {
+      const rolesText = (p.roles || []).join(" · ");
+      const tagsHtml = (p.tags || [])
+        .map(t => `<span class="tag">${t}</span>`).join("");
 
-      const form = new FormData(this);
-      const data = {
-        name: form.get("name"),
-        contact: form.get("contact"),
-        notes: form.get("notes"),
-        previewInfo: document.getElementById("preview-info").textContent,
-        previewImage: document.getElementById("preview-image").src
-      };
+      const links = [];
+      if (p.portfolio_url) {
+        links.push(`<a class="link-pill" href="${p.portfolio_url}" target="_blank" rel="noreferrer">포트폴리오</a>`);
+      }
+      if (p.schedule_url) {
+        links.push(`<a class="link-pill" href="${p.schedule_url}" target="_blank" rel="noreferrer">스케줄</a>`);
+      }
+      if (p.instagram) {
+        links.push(`<a class="link-pill" href="${p.instagram}" target="_blank" rel="noreferrer">Instagram</a>`);
+      }
 
-      // 실제 예약 API 호출 (Netlify 함수와 연결)
-      const response = await fetch("/.netlify/functions/reserve", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
+      const cardHtml = `
+        <article class="card">
+          <div class="name-line">
+            <div class="name">${p.name || "이름 미입력"}</div>
+            <div class="level-pill">${p.level || ""}</div>
+          </div>
+          ${rolesText ? `<div class="roles">파트 · ${rolesText}</div>` : ""}
+          ${p.main_gear ? `<div class="meta">주 장비 · ${p.main_gear}</div>` : ""}
+          <div class="tags">${tagsHtml}</div>
+          <div class="links">${links.join("")}</div>
+        </article>
+      `;
+      gridEl.insertAdjacentHTML("beforeend", cardHtml);
+    }
+  }
 
-      const result = await response.json();
-      alert(result.message);  // 예약 처리 완료 메시지 출력
-    });
-  </script>
+  async function loadDirectors() {
+    try {
+      statusEl.textContent = "노션에서 데이터를 불러오는 중입니다...";
+      const res = await fetch("/.netlify/functions/directors");
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("directors 함수 응답 오류:", txt);
+        statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
+        return;
+      }
+      const json = await res.json();
+      allDirectors = json.items || [];
+      statusEl.textContent = "";
+      renderDirectors();
+    } catch (e) {
+      console.error("loadDirectors 오류:", e);
+      statusEl.textContent = "디렉터 정보를 불러오는 중 오류가 발생했습니다.";
+    }
+  }
+
+  loadDirectors();
+</script>
+
 </body>
 </html>
