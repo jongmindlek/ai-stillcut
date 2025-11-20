@@ -2,354 +2,127 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA DIRECTORS · 감독 라인업</title>
+  <title>FIDUCIA · AI 스틸컷 예약</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, sans-serif;
       background: #07080b;
       color: #f5f5f5;
-      line-height: 1.6;
     }
-    a { color: inherit; text-decoration: none; }
-
-    .wrapper {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 24px 16px 64px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      margin-bottom: 24px;
-    }
-    .logo {
-      font-size: 14px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    nav {
-      font-size: 12px;
-      display: flex;
-      gap: 10px;
-      opacity: 0.8;
-    }
-    nav a { color: rgba(255,255,255,0.8); }
-    nav strong { font-weight: 700; }
-
-    h1 {
-      font-size: 26px;
-      margin: 20px 0 8px;
-    }
-    .lead {
-      font-size: 14px;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 16px;
-    }
-
-    /* 검색창 */
-    .search-row { margin-bottom: 10px; }
-    .search-input {
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(7,8,11,0.95);
-      color: #f5f5f5;
-      font-size: 13px;
-    }
-
-    /* 필터 */
-    .filter-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 18px;
-      font-size: 13px;
-    }
-    .filter-chip {
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.22);
-      padding: 4px 10px;
-      cursor: pointer;
-      opacity: 0.8;
-    }
-    .filter-chip.active {
-      background: linear-gradient(135deg, #3A6CF3, #7BA5FF);
-      color: #05060a;
-      opacity: 1;
-      border-color: transparent;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(255,255,255,0.06), transparent 55%);
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.16);
-      padding: 16px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: 13px;
-    }
-
-    .name-line {
-      display: flex;
-      justify-content: space-between;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
       align-items: center;
     }
-    .name { font-size: 16px; font-weight: 600; }
-
-    .level-pill {
-      font-size: 11px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 2px 8px;
-      opacity: 0.85;
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 100%;
     }
-
-    .fav-btn {
+    .form-container input, .form-container select, .form-container textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: #333;
+      color: #fff;
+    }
+    .form-container button {
+      background-color: #0078d4;
+      color: white;
+      padding: 12px;
       border: none;
-      background: transparent;
       cursor: pointer;
-      font-size: 17px;
-      color: rgba(255,255,255,0.5);
+      width: 100%;
     }
-    .fav-btn.active {
-      color: #ffd86b;
-      text-shadow: 0 0 6px rgba(255,216,107,0.7);
-    }
-
-    .roles { font-size: 12px; opacity: 0.85; }
-    .meta { font-size: 12px; opacity: 0.85; }
-
-    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag {
-      font-size: 11px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 2px 8px;
-    }
-
-    .link-pill {
-      font-size: 12px;
-      color: #7BA5FF;
-      border: 1px solid rgba(123,165,255,0.8);
-      padding: 3px 10px;
-      border-radius: 999px;
-    }
-
-    .detail-link {
-      margin-top: 4px;
-      font-size: 12px;
-      text-decoration: underline;
-      text-decoration-style: dotted;
-      opacity: 0.9;
-    }
-
-    .status {
-      font-size: 12px;
-      opacity: 0.8;
-      margin-bottom: 10px;
-    }
-
-    .back-link {
-      display: inline-block;
-      margin-top: 26px;
-      color: #7BA5FF;
-      font-size: 13px;
+    .form-container button:hover {
+      background-color: #005b99;
     }
   </style>
 </head>
-
 <body>
-<div class="wrapper">
-  <header>
-    <div class="logo">FIDUCIA · DIRECTORS</div>
+  <!-- 예약 모달 창 -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h2>예약 신청</h2>
+      <form id="reservation-form">
+        <!-- 스틸컷 미리보기 정보 삽입 -->
+        <p>예약하신 스틸컷: <strong id="preview-info">스틸컷 정보가 여기에 표시됩니다.</strong></p>
+        <img id="preview-image" src="" alt="스틸컷 이미지" style="width: 100%;"/>
 
-    <!-- ⭐ 완성된 NAV 메뉴 -->
-    <nav>
-      <a href="/">AI 스틸컷</a> ·
-      <strong>DIRECTORS</strong> ·
-      <a href="/staff.html">STAFF</a> ·
-      <a href="/reserve.html">예약 문의</a> ·
-      <a href="/apply.html">등록 문의</a>
-    </nav>
-  </header>
+        <label for="name">이름:</label>
+        <input type="text" id="name" name="name" required />
 
-  <main>
-    <h1>FIDUCIA DIRECTORS</h1>
-    <p class="lead">
-      연출 / 촬영 / 조명 / 편집 등 각 포지션의 감독 라인업입니다.<br>
-      검색, 태그, 즐겨찾기를 활용해 원하는 스타일의 감독을 찾아보세요.
-    </p>
+        <label for="contact">연락처 (전화번호):</label>
+        <input type="text" id="contact" name="contact" required />
 
-    <!-- 검색창 -->
-    <div class="search-row">
-      <input id="search-input" class="search-input" placeholder="이름 / 파트 / 장비 / 태그 검색" />
+        <label for="notes">메모:</label>
+        <textarea id="notes" name="notes"></textarea>
+
+        <button type="submit">예약 신청하기</button>
+      </form>
+      <p id="status"></p>
+      <button type="button" onclick="closeModal()">닫기</button>
     </div>
+  </div>
 
-    <!-- 필터 -->
-    <div class="filter-row">
-      <button class="filter-chip active" data-filter="all">전체</button>
-      <button class="filter-chip" data-filter="fav">즐겨찾기만</button>
-    </div>
+  <!-- 미리보기 이미지 및 예약 버튼 -->
+  <div id="preview">
+    <img id="preview-image" src="preview-image.jpg" alt="스틸컷 미리보기" />
+    <button id="open-reservation-form">예약하기</button>
+  </div>
 
-    <div id="status" class="status">노션에서 데이터를 불러오는 중입니다...</div>
-    <div id="directors-grid" class="grid"></div>
-
-    <a class="back-link" href="/">← AI 스틸컷 메인으로 돌아가기</a>
-  </main>
-</div>
-
-<script>
-  const gridEl = document.getElementById("directors-grid");
-  const statusEl = document.getElementById("status");
-  const searchInput = document.getElementById("search-input");
-
-  const FILTER_ALL = "all";
-  const FILTER_FAV = "fav";
-  let filterMode = FILTER_ALL;
-  
-  let allDirectors = [];
-  let favList = [];
-  let search = "";
-
-  const FAV_KEY = "fiducia_fav_directors_v1";
-
-  function loadFav() {
-    try {
-      favList = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
-    } catch {
-      favList = [];
-    }
-  }
-  function saveFav() {
-    localStorage.setItem(FAV_KEY, JSON.stringify(favList));
-  }
-  function toggleFav(id) {
-    if (favList.includes(id)) favList = favList.filter(x => x !== id);
-    else favList.push(id);
-    saveFav();
-    render();
-  }
-
-  function render() {
-    let list = allDirectors.slice();
-
-    if (filterMode === FILTER_FAV) {
-      list = list.filter(p => favList.includes(p.id));
-    }
-
-    if (search) {
-      const term = search.toLowerCase();
-      list = list.filter(p => {
-        const text = [
-          p.name,
-          (p.roles || []).join(" "),
-          p.main_gear,
-          (p.tags || []).join(" "),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return text.includes(term);
-      });
-    }
-
-    gridEl.innerHTML = "";
-
-    if (!list.length) {
-      gridEl.innerHTML = `<p style="opacity:0.8;">조건에 맞는 감독이 없습니다.</p>`;
-      return;
-    }
-
-    for (const p of list) {
-      const fav = favList.includes(p.id) ? "active" : "";
-      const star = favList.includes(p.id) ? "★" : "☆";
-
-      const rolesText = (p.roles || []).join(" · ");
-      const tags = (p.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
-
-      const links = [];
-      if (p.portfolio_url) links.push(`<a class="link-pill" href="${p.portfolio_url}" target="_blank">포트폴리오</a>`);
-      if (p.schedule_url) links.push(`<a class="link-pill" href="${p.schedule_url}" target="_blank">스케줄</a>`);
-      if (p.instagram) links.push(`<a class="link-pill" href="${p.instagram}" target="_blank">Instagram</a>`);
-
-      gridEl.insertAdjacentHTML(
-        "beforeend",
-        `
-        <article class="card">
-          <div class="name-line">
-            <div>
-              <div class="name">${p.name}</div>
-              <div class="level-pill">${p.level || ""}</div>
-            </div>
-            <button class="fav-btn ${fav}" data-id="${p.id}">${star}</button>
-          </div>
-
-          <div class="roles">파트 · ${rolesText}</div>
-          <div class="meta">주 장비 · ${p.main_gear || "-"}</div>
-
-          <div class="tags">${tags}</div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            ${links.join("")}
-          </div>
-
-          <a class="detail-link" href="/director-detail.html?id=${p.id}">감독 상세 보기 →</a>
-        </article>
-        `
-      );
-    }
-
-    document.querySelectorAll(".fav-btn").forEach(btn => {
-      btn.onclick = () => toggleFav(btn.dataset.id);
+  <script>
+    // 미리보기 정보 및 예약 폼 처리
+    document.getElementById("open-reservation-form").addEventListener("click", function() {
+      const previewInfo = document.getElementById("preview-info");
+      previewInfo.textContent = "스틸컷 정보: 예시 스틸컷";  // 실제 스틸컷 정보로 교체
+      document.getElementById("preview-image").src = "preview-image.jpg"; // 실제 이미지 URL로 교체
+      modal.style.display = "flex";
     });
-  }
 
-  async function load() {
-    loadFav();
-    try {
-      const res = await fetch("/.netlify/functions/directors");
-      const json = await res.json();
-      allDirectors = json.items || [];
-      statusEl.textContent = "";
-      render();
-    } catch {
-      statusEl.textContent = "감독 데이터를 불러오지 못했습니다.";
+    // 모달 닫기
+    function closeModal() {
+      modal.style.display = "none";
     }
-  }
 
-  load();
+    // 예약 폼 제출 시 처리
+    document.getElementById("reservation-form").addEventListener("submit", async function(event) {
+      event.preventDefault();
 
-  searchInput.oninput = (e) => {
-    search = e.target.value.trim();
-    render();
-  };
+      const form = new FormData(this);
+      const data = {
+        name: form.get("name"),
+        contact: form.get("contact"),
+        notes: form.get("notes"),
+        previewInfo: document.getElementById("preview-info").textContent,
+        previewImage: document.getElementById("preview-image").src
+      };
 
-  document.querySelectorAll(".filter-chip").forEach(btn => {
-    btn.onclick = () => {
-      filterMode = btn.dataset.filter;
-      document.querySelectorAll(".filter-chip").forEach(b =>
-        b.classList.toggle("active", b.dataset.filter === filterMode)
-      );
-      render();
-    };
-  });
-</script>
+      // 실제 예약 API 호출 (Netlify 함수와 연결)
+      const response = await fetch("/.netlify/functions/reserve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
 
+      const result = await response.json();
+      alert(result.message);  // 예약 처리 완료 메시지 출력
+    });
+  </script>
 </body>
 </html>
