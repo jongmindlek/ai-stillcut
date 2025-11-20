@@ -2,10 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA DIRECTORS · 감독 라인업</title>
+  <title>FIDUCIA COLLECTIVE · 감독 라인업</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- CSS 파일 연결 -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,39 +12,56 @@
   <header>
     <div class="logo">FIDUCIA COLLECTIVE</div>
     <nav>
-      <a href="#directors">Directors</a> ·
-      <strong>DIRECTORS</strong> ·
-      <a href="#contact">Contact</a>
+      <a href="#home">홈</a>
+      <a href="#directors">감독</a>
+      <a href="#staff">스태프</a>
+      <a href="#contact">연락처</a>
     </nav>
   </header>
 
   <!-- 메인 콘텐츠 -->
   <main>
-    <!-- Hero 섹션 -->
+    <!-- Hero 섹션 (배경 이미지 대신 CSS로 스타일링) -->
     <section id="hero">
-      <!-- Canva 디자인 이미지 삽입 -->
-      <img src="assets/images/director-market.jpg" alt="Director's Market" class="hero-image">
-      <h1>FIDUCIA DIRECTORS</h1>
-      <p>신뢰를 디자인하는 프로젝트 플랫폼</p>
+      <div class="hero-content">
+        <h1>FIDUCIA COLLECTIVE</h1>
+        <p>신뢰를 디자인하는 프로젝트 플랫폼</p>
+        <a href="#reserve" class="button">AI 스틸컷 예약하기</a>
+      </div>
     </section>
 
-    <!-- 디렉터 작업물 예시 -->
+    <!-- 디렉터 작업물 예시 (배경 이미지 대신 카드 형태로 디자인) -->
     <section id="recent-work">
       <h2>Recent Work</h2>
       <div class="work-card">
-        <img src="assets/images/recent-work1.jpg" alt="Close up">
-        <p>Close Up</p>
+        <div class="card-content">
+          <p>Close Up</p>
+        </div>
       </div>
       <div class="work-card">
-        <img src="assets/images/recent-work2.jpg" alt="D.O.P">
-        <p>D.O.P</p>
+        <div class="card-content">
+          <p>D.O.P</p>
+        </div>
       </div>
+    </section>
+
+    <!-- 예약 페이지 -->
+    <section id="reserve">
+      <h2>AI 스틸컷 예약</h2>
+      <p>지금 예약을 진행하세요!</p>
+      <form id="reservation-form">
+        <input type="text" name="name" placeholder="이름" required>
+        <input type="tel" name="contact" placeholder="연락처" required>
+        <button type="submit" class="button">예약하기</button>
+      </form>
     </section>
 
     <!-- 연락처 섹션 -->
     <section id="contact">
       <h2>Contact Us</h2>
       <p>문의는 아래 연락처로 해주세요.</p>
+      <p>Email: contact@fiduciacollective.com</p>
+      <p>Instagram: <a href="https://www.instagram.com/fiducia" target="_blank">fiducia</a></p>
     </section>
   </main>
 
@@ -55,5 +70,6 @@
     <p>&copy; 2025 Fiducia Collective. All rights reserved.</p>
   </footer>
 
+  <script src="script.js"></script>
 </body>
 </html>
