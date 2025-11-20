@@ -1,17 +1,15 @@
-// netlify/functions/reserve.js
-const axios = require('axios');
+const axios = require('axios');  // axios를 사용하여 HTTP 요청 처리
 
 // 카카오톡 메시지 보내는 함수
-async function sendMessageToKakao(userMessage) {
-  const apiKey = process.env.KAKAO_ACCESS_TOKEN;  // Netlify 환경 변수에서 API 키 가져오기
+async function sendMessageToKakao(userMessage, kakaoApiKey) {
   const kakaoApiUrl = 'https://kapi.kakao.com/v2/api/talk/memo/default/send';
 
   const data = {
     object_type: 'text',
-    text: userMessage, // 예약 정보
+    text: userMessage,  // 고객이 입력한 예약 정보 메시지
     link: {
-      web_url: 'https://your-website.com/confirmation',  // 예약 확인 링크
-      mobile_web_url: 'https://your-website.com/confirmation',
+      web_url: 'https://your-website.com/reservation/',  // 예약 확인 링크
+      mobile_web_url: 'https://your-website.com/reservation',
     },
     button_title: '예약 확인하기'
   };
@@ -19,7 +17,7 @@ async function sendMessageToKakao(userMessage) {
   try {
     const response = await axios.post(kakaoApiUrl, data, {
       headers: {
-        'Authorization': `Bearer ${apiKey}`,  // 환경 변수에서 API 액세스 토큰을 사용
+        'Authorization': `Bearer ${kakaoApiKey}`,  // 카카오 API 액세스 토큰
       }
     });
     console.log('Message sent successfully:', response.data);
@@ -28,36 +26,33 @@ async function sendMessageToKakao(userMessage) {
   }
 }
 
-// 예약 요청을 처리하는 함수
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'POST method is required.' }),
-    };
-  }
-
-  // 폼 데이터 받아오기
-  const payload = JSON.parse(event.body);
-  const { name, contact, message } = payload;
-
-  if (!name || !contact || !message) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Name, contact, and message are required.' }),
-    };
-  }
-
+  const { kakaoApiKey } = process.env; // 환경변수에서 카카오 API 키 가져오기
+  const { name, contact, projectType, budget, shootDate, shootLocation, requestDetails } = JSON.parse(event.body); // 클라이언트에서 보낸 예약 데이터
+  
   const userMessage = `
-    이름: ${name}
-    연락처: ${contact}
-    요청사항: ${message}
+    예약 정보:
+    - 이름: ${name}
+    - 연락처: ${contact}
+    - 프로젝트 종류: ${projectType}
+    - 예산: ${budget}
+    - 촬영 날짜: ${shootDate}
+    - 촬영 장소: ${shootLocation}
+    - 요청 사항: ${requestDetails}
   `;
 
-  await sendMessageToKakao(userMessage);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: '예약 요청이 접수되었습니다!' }),
-  };
+  try {
+    // 카카오톡 메시지 보내기
+    await sendMessageToKakao(userMessage, kakaoApiKey);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: '예약 요청이 성공적으로 전송되었습니다!' })
+    };
+  } catch (error) {
+    console.error('예약 처리 중 오류 발생:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: '예약 처리 중 오류가 발생했습니다.' })
+    };
+  }
 };
