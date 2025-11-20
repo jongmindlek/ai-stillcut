@@ -1,14 +1,13 @@
 {
   "name": "ai-stillcut",
   "version": "1.0.0",
-  "description": "AI 기반 스틸컷 생성 서비스",
+  "description": "AI 기반 스틸컷 예약 시스템",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "axios": "^0.21.1",
-    "express": "^4.17.1",
+    "axios": "^0.24.0",
     "dotenv": "^10.0.0"
   },
   "devDependencies": {},
