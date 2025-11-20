@@ -1,12 +1,33 @@
 // netlify/functions/reserve.js
-// 예약 폼에서 받은 정보를 Notion Reservation DB 에 저장하는 함수
+// 카카오톡 API로 메시지 보내는 함수
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY;
-const NOTION_VERSION = process.env.NOTION_VERSION || "2022-06-28";
-const RESERVATION_DB_ID = process.env.NOTION_RESERVATION_DB_ID;
+const axios = require('axios');
 
+// 카카오톡 메시지 보내는 함수
+const sendMessageToKakao = async (userMessage) => {
+  try {
+    const response = await axios.post('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
+      template_object: {
+        object_type: 'text',
+        text: `예약 요청: ${userMessage}`,  // 예약 정보
+        link: {
+          web_url: 'https://your-website.com/confirmation',  // 예약 확인 링크
+        }
+      }
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.KAKAO_ACCESS_TOKEN}`  // 여기에 환경 변수로 설정한 카카오톡 API 액세스 토큰을 넣습니다
+      }
+    });
+    console.log('Message sent:', response.data);
+  } catch (error) {
+    console.error('Error sending message to Kakao:', error);
+  }
+};
+
+// 예약 정보 예시
 exports.handler = async (event) => {
-  // 1) 메서드 체크 (POST 만 허용)
+  // POST 메소드만 처리
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -15,37 +36,11 @@ exports.handler = async (event) => {
     };
   }
 
-  if (!NOTION_API_KEY || !RESERVATION_DB_ID) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        error: "Notion 환경변수(NOTION_API_KEY / NOTION_RESERVATION_DB_ID)가 설정되지 않았습니다.",
-      }),
-    };
-  }
+  // 폼 데이터 받아오기
+  const payload = JSON.parse(event.body);
+  const { name, contact, projectType, budget, preferredDate, location, message } = payload;
 
-  let payload;
-  try {
-    payload = JSON.parse(event.body || "{}");
-  } catch (e) {
-    return {
-      statusCode: 400,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "잘못된 JSON 형식입니다." }),
-    };
-  }
-
-  const {
-    name,
-    contact,
-    projectType,
-    budget,
-    preferredDate,
-    location,
-    message,
-  } = payload;
-
+  // 필수 항목 확인
   if (!name || !contact || !message) {
     return {
       statusCode: 400,
@@ -54,129 +49,23 @@ exports.handler = async (event) => {
     };
   }
 
-  // 2) Notion DB 에 저장할 properties 구성
-  const notionBody = {
-    parent: { database_id: RESERVATION_DB_ID },
-    properties: {
-      // Name: 제목 컬럼 (타입: title)
-      Name: {
-        title: [
-          {
-            text: { content: name },
-          },
-        ],
-      },
+  // 예약 메시지 형식
+  const userMessage = `
+    이름: ${name}
+    연락처: ${contact}
+    프로젝트 종류: ${projectType || "미제공"}
+    예산: ${budget || "미제공"}
+    희망 일정: ${preferredDate || "미제공"}
+    촬영 장소: ${location || "미제공"}
+    상세 요청: ${message}
+  `;
 
-      // Contact: 연락처 (타입: rich text)
-      Contact: {
-        rich_text: [
-          {
-            text: { content: contact },
-          },
-        ],
-      },
+  // 카카오톡 메시지 전송
+  await sendMessageToKakao(userMessage);
 
-      // ProjectType: 프로젝트 종류 (타입: select 권장)
-      ProjectType: projectType
-        ? {
-            select: { name: projectType },
-          }
-        : undefined,
-
-      // Budget: 예산 (타입: select 권장)
-      Budget: budget
-        ? {
-            select: { name: budget },
-          }
-        : undefined,
-
-      // PreferredDate: 희망 날짜 (타입: date)
-      PreferredDate: preferredDate
-        ? {
-            date: {
-              start: preferredDate, // "YYYY-MM-DD"
-            },
-          }
-        : undefined,
-
-      // Location: 장소 (타입: rich text)
-      Location: location
-        ? {
-            rich_text: [
-              {
-                text: { content: location },
-              },
-            ],
-          }
-        : undefined,
-
-      // Message: 상세 요청 (타입: rich text)
-      Message: {
-        rich_text: [
-          {
-            text: { content: message },
-          },
-        ],
-      },
-
-      // Status: 상태 (타입: status or select) – 신규 접수로 기본값 설정
-      Status: {
-  select: { name: "신규 접수" },
-},
-    },
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "예약 요청이 접수되었습니다!" }),
   };
-
-  // undefined 프로퍼티 제거 (Notion은 undefined 있으면 에러는 안 나도 지저분해서 정리)
-  Object.keys(notionBody.properties).forEach((key) => {
-    if (notionBody.properties[key] === undefined) {
-      delete notionBody.properties[key];
-    }
-  });
-
-  try {
-    const res = await fetch("https://api.notion.com/v1/pages", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${NOTION_API_KEY}`,
-        "Notion-Version": NOTION_VERSION,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(notionBody),
-    });
-
-    const text = await res.text();
-
-    if (!res.ok) {
-      console.error("Notion 예약 생성 실패:", text);
-      return {
-        statusCode: res.status,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "Notion API 요청 실패 (reserve)",
-          detail: text,
-        }),
-      };
-    }
-
-    // 성공
-    const json = JSON.parse(text);
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ok: true,
-        id: json.id,
-      }),
-    };
-  } catch (err) {
-    console.error("reserve 함수 내부 오류:", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        error: "서버 내부 오류 (reserve)",
-        detail: String(err),
-      }),
-    };
-  }
 };
