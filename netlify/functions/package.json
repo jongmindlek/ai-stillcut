@@ -1,0 +1,7 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "dependencies": {
+    "axios": "^0.21.1"  // 또는 필요한 다른 의존성 추가
+  }
+}
