@@ -1,58 +1,97 @@
-const axios = require('axios');  // axios를 사용하여 HTTP 요청 처리
+const axios = require('axios');  // Axios를 사용하여 HTTP 요청 처리
 
-// 카카오톡 메시지 보내는 함수
-async function sendMessageToKakao(userMessage, kakaoApiKey) {
-  const kakaoApiUrl = 'https://kapi.kakao.com/v2/api/talk/memo/default/send';
+// Notion API 설정
+const notionApiUrl = 'https://api.notion.com/v1/pages';
+const notionApiKey = process.env.NOTION_API_KEY;  // Notion API 키
+const notionDatabaseId = process.env.NOTION_DATABASE_ID;  // Notion 데이터베이스 ID
 
-  const data = {
-    object_type: 'text',
-    text: userMessage,  // 고객이 입력한 예약 정보 메시지
-    link: {
-      web_url: 'https://your-website.com/reservation/',  // 예약 확인 링크
-      mobile_web_url: 'https://your-website.com/reservation',
+// 예약 정보를 Notion에 추가하는 함수
+async function addReservationToNotion(data) {
+  const notionData = {
+    parent: { database_id: notionDatabaseId },
+    properties: {
+      '예약자 이름': {
+        title: [
+          {
+            text: {
+              content: data.name,
+            },
+          },
+        ],
+      },
+      '연락처': {
+        rich_text: [
+          {
+            text: {
+              content: data.contact,
+            },
+          },
+        ],
+      },
+      '프로젝트 종류': {
+        select: {
+          name: data.previewInfo,
+        },
+      },
+      '예산': {
+        select: {
+          name: data.budget,
+        },
+      },
+      '촬영 날짜': {
+        date: {
+          start: data.shootDate,
+        },
+      },
+      '촬영 장소': {
+        rich_text: [
+          {
+            text: {
+              content: data.shootLocation,
+            },
+          },
+        ],
+      },
+      '요청 사항': {
+        rich_text: [
+          {
+            text: {
+              content: data.requestDetails,
+            },
+          },
+        ],
+      },
+      '스틸컷 이미지': {
+        files: [
+          {
+            type: 'external',
+            name: '스틸컷 이미지',
+            external: { url: data.previewImage }
+          }
+        ]
+      }
     },
-    button_title: '예약 확인하기'
   };
 
   try {
-    const response = await axios.post(kakaoApiUrl, data, {
+    const response = await axios.post(notionApiUrl, notionData, {
       headers: {
-        'Authorization': `Bearer ${kakaoApiKey}`,  // 카카오 API 액세스 토큰
-      }
+        'Authorization': `Bearer ${notionApiKey}`,
+        'Notion-Version': '2021-05-13',
+      },
     });
-    console.log('Message sent successfully:', response.data);
+    console.log('Reservation added to Notion:', response.data);
   } catch (error) {
-    console.error('Error sending message to Kakao:', error);
+    console.error('Error adding reservation to Notion:', error);
   }
 }
 
 exports.handler = async (event) => {
-  const { kakaoApiKey } = process.env; // 환경변수에서 카카오 API 키 가져오기
-  const { name, contact, projectType, budget, shootDate, shootLocation, requestDetails } = JSON.parse(event.body); // 클라이언트에서 보낸 예약 데이터
-  
-  const userMessage = `
-    예약 정보:
-    - 이름: ${name}
-    - 연락처: ${contact}
-    - 프로젝트 종류: ${projectType}
-    - 예산: ${budget}
-    - 촬영 날짜: ${shootDate}
-    - 촬영 장소: ${shootLocation}
-    - 요청 사항: ${requestDetails}
-  `;
+  const data = JSON.parse(event.body);  // 폼에서 받은 데이터
+  await addReservationToNotion(data);  // Notion에 예약 정보 저장
 
-  try {
-    // 카카오톡 메시지 보내기
-    await sendMessageToKakao(userMessage, kakaoApiKey);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: '예약 요청이 성공적으로 전송되었습니다!' })
-    };
-  } catch (error) {
-    console.error('예약 처리 중 오류 발생:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: '예약 처리 중 오류가 발생했습니다.' })
-    };
-  }
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ message: '예약 요청이 Notion에 저장되었습니다!' }),
+  };
 };
