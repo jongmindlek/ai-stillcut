@@ -1,0 +1,78 @@
+/* 기본 스타일 설정 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #111;
+    color: white;
+}
+
+/* 헤더 스타일 */
+header {
+    background-color: #222;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header .logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+nav a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* 메인 콘텐츠 */
+main {
+    padding: 40px 20px;
+}
+
+#hero {
+    text-align: center;
+}
+
+#hero .hero-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+#recent-work {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 40px;
+}
+
+.work-card {
+    width: 30%;
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.work-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+footer {
+    background-color: #222;
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+}
+
+footer p {
+    color: #bbb;
+}
