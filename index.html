@@ -5,10 +5,11 @@
   <title>Director's Market | Fiducia Collective</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 웹폰트 예시 (선택사항) -->
+  <!-- Pretendard / Poppins 비슷한 느낌용 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css" />
 
   <style>
     :root {
@@ -30,13 +31,13 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       line-height: 1.5;
     }
 
     .page {
       min-height: 100vh;
-      padding: 32px 20px 80px;
+      padding: 0 20px 80px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -47,11 +48,53 @@
       max-width: var(--max-width);
     }
 
-    /* ---------- HERO 영역 ---------- */
+    /* ---------- NAV ---------- */
+
+    .nav {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+    }
+
+    .nav-logo {
+      font-size: 14px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-family: 'Poppins', system-ui, sans-serif;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-menu a {
+      text-decoration: none;
+      color: var(--muted);
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a.is-active {
+      color: #fff;
+      border-color: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* ---------- HERO ---------- */
 
     .hero {
       text-align: center;
-      margin-bottom: 40px;
+      margin: 28px 0 40px;
     }
 
     .hero-brand {
@@ -67,7 +110,7 @@
       line-height: 1.3;
       font-weight: 600;
       margin-bottom: 18px;
-      white-space: pre-line; /* 줄바꿈 유지용 */
+      white-space: pre-line;
     }
 
     .hero-sub-title {
@@ -79,7 +122,6 @@
       margin-bottom: 18px;
     }
 
-    /* 파란 동그라미 */
     .hero-sub-title::before {
       content: "";
       position: absolute;
@@ -131,7 +173,7 @@
 
     .work-thumb {
       position: relative;
-      padding-top: 60%; /* 16:9 비율 비슷하게 */
+      padding-top: 60%;
       overflow: hidden;
     }
 
@@ -176,7 +218,7 @@
       font-weight: 500;
     }
 
-    /* ---------- 소개 영역 ---------- */
+    /* ---------- ABOUT ---------- */
 
     .about {
       text-align: center;
@@ -207,7 +249,37 @@
       margin-top: 14px;
     }
 
-    /* ---------- 하단 아이콘 ---------- */
+    /* ---------- CTA 버튼 ---------- */
+    .cta-wrapper {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+      box-shadow: 0 8px 18px rgba(61, 107, 255, 0.4);
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.97;
+      box-shadow: 0 10px 24px rgba(61, 107, 255, 0.55);
+    }
+
+    /* ---------- FOOTER ICONS ---------- */
 
     .footer-icons {
       margin-top: 26px;
@@ -228,137 +300,144 @@
       opacity: 1;
       transform: translateY(-2px);
     }
+
+    /* 섹션 ID 여백 */
+    section {
+      scroll-margin-top: 80px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <div class="inner">
 
-      <!-- HERO -->
-      <header class="hero">
-        <div class="hero-brand">FIDUCIA COLLECTIVE</div>
-
-        <h1 class="hero-title-kr">
-          신뢰를
-          디자인하는
-          프로덕션 플랫폼
-        </h1>
-
-        <div class="hero-sub-title">
-          Director's Market
+      <!-- NAV -->
+      <nav class="nav">
+        <div class="nav-logo">FIDUCIA COLLECTIVE</div>
+        <div class="nav-menu">
+          <a href="#main" class="is-active">메인</a>
+          <a href="#ai-stillcut">AI 스틸컷 (예약)</a>
+          <a href="#gear">장비 예약</a>
+          <a href="#crew-list">감독/스태프 리스트</a>
+          <a href="#crew-register">감독/스태프 등록</a>
         </div>
+      </nav>
 
-        <p class="hero-quote">
+      <!-- MAIN / HERO -->
+      <main id="main">
+        <header class="hero">
+          <div class="hero-brand">FIDUCIA COLLECTIVE</div>
+
+          <h1 class="hero-title-kr">
+신뢰를
+디자인하는
+프로덕션 플랫폼
+          </h1>
+
+          <div class="hero-sub-title">
+            Director's Market
+          </div>
+
+          <p class="hero-quote">
 "Trust isn't what follows art
 It's where art begins."
-        </p>
-      </header>
+          </p>
+        </header>
 
-      <!-- RECENT WORK -->
-      <section>
-        <h2 class="section-title">recent work</h2>
+        <!-- RECENT WORK (Notion에서 받아서 채우는 영역) -->
+        <section>
+          <h2 class="section-title">recent work</h2>
 
-        <div class="work-grid">
-          <!-- 카드 1 -->
-          <article class="work-card">
-            <div class="work-thumb">
-              <img src="thumb1.jpg" alt="지나고 이어져 망각진 스틸컷">
-            </div>
-            <div class="work-meta">
-              <div class="work-title">지나고 이어져 망각진</div>
-              <div class="work-sub">한국예술종합학교 본선</div>
-              <div class="work-role-label">Director</div>
-              <div class="work-role-name">최종민</div>
-            </div>
-          </article>
+          <!-- 여기를 JS가 Notion 데이터로 채움 -->
+          <div id="work-grid" class="work-grid"></div>
+        </section>
 
-          <!-- 카드 2 -->
-          <article class="work-card">
-            <div class="work-thumb">
-              <img src="thumb2.jpg" alt="Close up 스틸컷">
-            </div>
-            <div class="work-meta">
-              <div class="work-title">Close up</div>
-              <div class="work-sub">2025 중앙단편영화제 본선</div>
-              <div class="work-role-label">cinematographer</div>
-              <div class="work-role-name">최종민</div>
-            </div>
-          </article>
+        <!-- ABOUT / INTRO -->
+        <section class="about" id="ai-stillcut">
+          <div class="about-title">
+            '<span>Fiducia collective</span>'란?
+          </div>
 
-          <!-- 카드 3 -->
-          <article class="work-card">
-            <div class="work-thumb">
-              <img src="thumb3.jpg" alt="어른아이 스틸컷">
-            </div>
-            <div class="work-meta">
-              <div class="work-title">어른아이</div>
-              <div class="work-sub">&nbsp;</div>
-              <div class="work-role-label">D.O.P</div>
-              <div class="work-role-name">최종민</div>
-            </div>
-          </article>
+          <p>
+            <span class="about-accent">AI 기반 시각화 기술</span>과<br>
+            검증된 감독 네트워크를 결합해<br>
+            영상 기획 과정 부담은 줄이고<br>
+            신뢰 있게 연결하는<br>
+            <span class="about-bold">크리에이티브 프로덕션</span>입니다!
+          </p>
 
-          <!-- 카드 4 -->
-          <article class="work-card">
-            <div class="work-thumb">
-              <img src="thumb4.jpg" alt="지나고 이어져 망각진 스틸컷">
-            </div>
-            <div class="work-meta">
-              <div class="work-title">지나고 이어져 망각진</div>
-              <div class="work-sub">한국예술종합학교 본선</div>
-              <div class="work-role-label">Director</div>
-              <div class="work-role-name">최종민</div>
-            </div>
-          </article>
+          <p class="about-spaced">
+            AI 스틸컷 / 감독 매칭 / 장비 예약<br>
+            한 곳에서.<br>
+            당신의 비전을 가장 잘 구현할 팀을<br>
+            AI가 연결합니다.
+          </p>
 
-          <!-- 카드 5 -->
-          <article class="work-card">
-            <div class="work-thumb">
-              <img src="thumb5.jpg" alt="지나고 이어져 망각진 스틸컷">
-            </div>
-            <div class="work-meta">
-              <div class="work-title">지나고 이어져 망각진</div>
-              <div class="work-sub">한국예술종합학교 본선</div>
-              <div class="work-role-label">Director</div>
-              <div class="work-role-name">최종민</div>
-            </div>
-          </article>
-        </div>
-      </section>
+          <!-- ✅ AI 스틸컷 이용해보기 버튼 -->
+          <div class="cta-wrapper">
+            <a class="cta-btn" href="#ai-stillcut-reserve">
+              AI 스틸컷 이용해보기
+            </a>
+          </div>
 
-      <!-- ABOUT / 소개 -->
-      <section class="about">
-        <div class="about-title">
-          '<span>Fiducia collective</span>'란?
-        </div>
+          <div class="footer-icons">
+            <a href="https://instagram.com" target="_blank" aria-label="Instagram">📷</a>
+            <a href="tel:01000000000" aria-label="Phone">📱</a>
+          </div>
+        </section>
 
-        <p>
-          <span class="about-accent">AI 기반 시각화 기술</span>과<br>
-          검증된 감독 네트워크를 결합해<br>
-          영상 기획 과정 부담은 줄이고<br>
-          신뢰 있게 연결하는<br>
-          <span class="about-bold">크리에이티브 프로덕션</span>입니다!
-        </p>
+        <!-- 아래 섹션들은 일단 앵커용 구조만 만들어둠 -->
+        <section id="gear">
+          <!-- 장비 예약 섹션 내용 여기 채우면 됨 -->
+        </section>
 
-        <p class="about-spaced">
-          AI 스틸컷 / 감독 매칭 / 장비 예약<br>
-          한 곳에서!<br>
-          당신의 비전을 가장 잘 구현할 팀을<br>
-          AI가 연결합니다.
-        </p>
+        <section id="crew-list">
+          <!-- 감독/스태프 리스트 섹션 내용 -->
+        </section>
 
-        <div class="footer-icons">
-          <!-- 인스타 & 연락 아이콘 (링크는 나중에 교체) -->
-          <a href="https://instagram.com" target="_blank" aria-label="Instagram">
-            📷
-          </a>
-          <a href="tel:01000000000" aria-label="Phone">
-            📱
-          </a>
-        </div>
-      </section>
+        <section id="crew-register">
+          <!-- 감독/스태프 등록 폼 섹션 내용 -->
+        </section>
 
+        <section id="ai-stillcut-reserve">
+          <!-- AI 스틸컷 예약용 실제 폼/설명 들어갈 자리 -->
+        </section>
+      </main>
     </div>
   </div>
+
+  <!-- Notion에서 데이터 가져오는 스크립트 -->
+  <script>
+    async function loadWorks() {
+      try {
+        const res = await fetch('/api/works'); // 백엔드/넷리파이 함수 주소
+        const works = await res.json();
+
+        const grid = document.getElementById('work-grid');
+        grid.innerHTML = '';
+
+        works.forEach((work) => {
+          const card = document.createElement('article');
+          card.className = 'work-card';
+          card.innerHTML = `
+            <div class="work-thumb">
+              <img src="${work.thumbnailUrl}" alt="${work.title} 스틸컷" />
+            </div>
+            <div class="work-meta">
+              <div class="work-title">${work.title}</div>
+              <div class="work-sub">${work.subTitle || ''}</div>
+              <div class="work-role-label">${work.roleLabel || ''}</div>
+              <div class="work-role-name">${work.roleName || ''}</div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadWorks);
+  </script>
 </body>
 </html>
