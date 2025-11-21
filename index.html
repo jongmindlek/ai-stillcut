@@ -2,74 +2,363 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>FIDUCIA COLLECTIVE · 감독 라인업</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+  <title>Director's Market | Fiducia Collective</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- 웹폰트 예시 (선택사항) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #050505;
+      --text: #ffffff;
+      --muted: #a4a4a4;
+      --accent: #3d6bff;
+      --card-bg: #2f5bff;
+      --card-radius: 18px;
+      --max-width: 960px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 32px 20px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .inner {
+      width: 100%;
+      max-width: var(--max-width);
+    }
+
+    /* ---------- HERO 영역 ---------- */
+
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero-brand {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      font-family: 'Poppins', system-ui, sans-serif;
+    }
+
+    .hero-title-kr {
+      font-size: 26px;
+      line-height: 1.3;
+      font-weight: 600;
+      margin-bottom: 18px;
+      white-space: pre-line; /* 줄바꿈 유지용 */
+    }
+
+    .hero-sub-title {
+      display: inline-block;
+      position: relative;
+      font-size: 20px;
+      font-family: 'Poppins', system-ui, sans-serif;
+      padding: 4px 10px 2px;
+      margin-bottom: 18px;
+    }
+
+    /* 파란 동그라미 */
+    .hero-sub-title::before {
+      content: "";
+      position: absolute;
+      inset: -6px -12px;
+      border-radius: 999px;
+      border: 3px solid var(--accent);
+      pointer-events: none;
+    }
+
+    .hero-quote {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      white-space: pre-line;
+      font-family: 'Poppins', system-ui, sans-serif;
+    }
+
+    /* ---------- RECENT WORK ---------- */
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 36px 0 18px;
+      text-align: left;
+      text-transform: lowercase;
+      font-family: 'Poppins', system-ui, sans-serif;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    @media (min-width: 640px) {
+      .work-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .work-card {
+      background-color: #111;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    }
+
+    .work-thumb {
+      position: relative;
+      padding-top: 60%; /* 16:9 비율 비슷하게 */
+      overflow: hidden;
+    }
+
+    .work-thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.1);
+      transform: scale(1.02);
+    }
+
+    .work-meta {
+      background-color: var(--card-bg);
+      padding: 14px 14px 16px;
+      color: #f6f6f6;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .work-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .work-sub {
+      font-size: 11px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+
+    .work-role-label {
+      font-size: 10px;
+      opacity: 0.8;
+    }
+
+    .work-role-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ---------- 소개 영역 ---------- */
+
+    .about {
+      text-align: center;
+      margin-top: 52px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .about-title {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .about-title span {
+      font-family: 'Poppins', system-ui, sans-serif;
+    }
+
+    .about-bold {
+      font-weight: 600;
+    }
+
+    .about-accent {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .about-spaced {
+      margin-top: 14px;
+    }
+
+    /* ---------- 하단 아이콘 ---------- */
+
+    .footer-icons {
+      margin-top: 26px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      font-size: 26px;
+    }
+
+    .footer-icons a {
+      text-decoration: none;
+      color: #ffffff;
+      opacity: 0.9;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .footer-icons a:hover {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  </style>
 </head>
 <body>
+  <div class="page">
+    <div class="inner">
 
-  <!-- 헤더 -->
-  <header>
-    <div class="logo">FIDUCIA COLLECTIVE</div>
-    <nav>
-      <a href="#home">홈</a>
-      <a href="#directors">감독</a>
-      <a href="#staff">스태프</a>
-      <a href="#contact">연락처</a>
-    </nav>
-  </header>
+      <!-- HERO -->
+      <header class="hero">
+        <div class="hero-brand">FIDUCIA COLLECTIVE</div>
 
-  <!-- 메인 콘텐츠 -->
-  <main>
-    <!-- Hero 섹션 (배경 이미지 대신 CSS로 스타일링) -->
-    <section id="hero">
-      <div class="hero-content">
-        <h1>FIDUCIA COLLECTIVE</h1>
-        <p>신뢰를 디자인하는 프로젝트 플랫폼</p>
-        <a href="#reserve" class="button">AI 스틸컷 예약하기</a>
-      </div>
-    </section>
+        <h1 class="hero-title-kr">
+          신뢰를
+          디자인하는
+          프로덕션 플랫폼
+        </h1>
 
-    <!-- 디렉터 작업물 예시 (배경 이미지 대신 카드 형태로 디자인) -->
-    <section id="recent-work">
-      <h2>Recent Work</h2>
-      <div class="work-card">
-        <div class="card-content">
-          <p>Close Up</p>
+        <div class="hero-sub-title">
+          Director's Market
         </div>
-      </div>
-      <div class="work-card">
-        <div class="card-content">
-          <p>D.O.P</p>
+
+        <p class="hero-quote">
+"Trust isn't what follows art
+It's where art begins."
+        </p>
+      </header>
+
+      <!-- RECENT WORK -->
+      <section>
+        <h2 class="section-title">recent work</h2>
+
+        <div class="work-grid">
+          <!-- 카드 1 -->
+          <article class="work-card">
+            <div class="work-thumb">
+              <img src="thumb1.jpg" alt="지나고 이어져 망각진 스틸컷">
+            </div>
+            <div class="work-meta">
+              <div class="work-title">지나고 이어져 망각진</div>
+              <div class="work-sub">한국예술종합학교 본선</div>
+              <div class="work-role-label">Director</div>
+              <div class="work-role-name">최종민</div>
+            </div>
+          </article>
+
+          <!-- 카드 2 -->
+          <article class="work-card">
+            <div class="work-thumb">
+              <img src="thumb2.jpg" alt="Close up 스틸컷">
+            </div>
+            <div class="work-meta">
+              <div class="work-title">Close up</div>
+              <div class="work-sub">2025 중앙단편영화제 본선</div>
+              <div class="work-role-label">cinematographer</div>
+              <div class="work-role-name">최종민</div>
+            </div>
+          </article>
+
+          <!-- 카드 3 -->
+          <article class="work-card">
+            <div class="work-thumb">
+              <img src="thumb3.jpg" alt="어른아이 스틸컷">
+            </div>
+            <div class="work-meta">
+              <div class="work-title">어른아이</div>
+              <div class="work-sub">&nbsp;</div>
+              <div class="work-role-label">D.O.P</div>
+              <div class="work-role-name">최종민</div>
+            </div>
+          </article>
+
+          <!-- 카드 4 -->
+          <article class="work-card">
+            <div class="work-thumb">
+              <img src="thumb4.jpg" alt="지나고 이어져 망각진 스틸컷">
+            </div>
+            <div class="work-meta">
+              <div class="work-title">지나고 이어져 망각진</div>
+              <div class="work-sub">한국예술종합학교 본선</div>
+              <div class="work-role-label">Director</div>
+              <div class="work-role-name">최종민</div>
+            </div>
+          </article>
+
+          <!-- 카드 5 -->
+          <article class="work-card">
+            <div class="work-thumb">
+              <img src="thumb5.jpg" alt="지나고 이어져 망각진 스틸컷">
+            </div>
+            <div class="work-meta">
+              <div class="work-title">지나고 이어져 망각진</div>
+              <div class="work-sub">한국예술종합학교 본선</div>
+              <div class="work-role-label">Director</div>
+              <div class="work-role-name">최종민</div>
+            </div>
+          </article>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 예약 페이지 -->
-    <section id="reserve">
-      <h2>AI 스틸컷 예약</h2>
-      <p>지금 예약을 진행하세요!</p>
-      <form id="reservation-form">
-        <input type="text" name="name" placeholder="이름" required>
-        <input type="tel" name="contact" placeholder="연락처" required>
-        <button type="submit" class="button">예약하기</button>
-      </form>
-    </section>
+      <!-- ABOUT / 소개 -->
+      <section class="about">
+        <div class="about-title">
+          '<span>Fiducia collective</span>'란?
+        </div>
 
-    <!-- 연락처 섹션 -->
-    <section id="contact">
-      <h2>Contact Us</h2>
-      <p>문의는 아래 연락처로 해주세요.</p>
-      <p>Email: contact@fiduciacollective.com</p>
-      <p>Instagram: <a href="https://www.instagram.com/fiducia" target="_blank">fiducia</a></p>
-    </section>
-  </main>
+        <p>
+          <span class="about-accent">AI 기반 시각화 기술</span>과<br>
+          검증된 감독 네트워크를 결합해<br>
+          영상 기획 과정 부담은 줄이고<br>
+          신뢰 있게 연결하는<br>
+          <span class="about-bold">크리에이티브 프로덕션</span>입니다!
+        </p>
 
-  <!-- 푸터 -->
-  <footer>
-    <p>&copy; 2025 Fiducia Collective. All rights reserved.</p>
-  </footer>
+        <p class="about-spaced">
+          AI 스틸컷 / 감독 매칭 / 장비 예약<br>
+          한 곳에서!<br>
+          당신의 비전을 가장 잘 구현할 팀을<br>
+          AI가 연결합니다.
+        </p>
 
-  <script src="script.js"></script>
+        <div class="footer-icons">
+          <!-- 인스타 & 연락 아이콘 (링크는 나중에 교체) -->
+          <a href="https://instagram.com" target="_blank" aria-label="Instagram">
+            📷
+          </a>
+          <a href="tel:01000000000" aria-label="Phone">
+            📱
+          </a>
+        </div>
+      </section>
+
+    </div>
+  </div>
 </body>
 </html>
